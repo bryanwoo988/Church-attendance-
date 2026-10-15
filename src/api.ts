@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { personFrom, meetingFrom, offeringFrom, attendanceFrom, groupFrom } from './data';
-import type { Attendance, ChurchSettings, Group, Meeting, Offering, Person, PersonKind, PersonStatus } from '../shared/types';
+import type { Attendance, ChurchSettings, Group, Meeting, Offering, Person, PersonKind, PersonStatus, Role } from '../shared/types';
 import { DEFAULT_SETTINGS } from '../shared/types';
 
 /** Live query helper. Returns undefined while loading. */
@@ -104,4 +104,33 @@ export async function updateOwnOffering(id: string, amountSen: number, category:
 export async function deleteOwnOffering(id: string) {
   const { deleteDoc } = await import('firebase/firestore');
   await deleteDoc(doc(db, 'offerings', id));
+}
+
+export function useUsers(): (UserDocLite & { uid: string })[] | undefined {
+  return useLive('users', [], (s: any) => ({ uid: s.id, ...(s.data() as UserDocLite) }), []);
+}
+type UserDocLite = { personId: string; householdId: string; roles: Role[] };
+
+export async function setRoles(uid: string, roles: Role[]) {
+  await updateDoc(doc(db, 'users', uid), { roles });
+}
+
+export async function updatePerson(id: string, patch: Partial<Pick<Person, 'name' | 'kind' | 'status' | 'phone' | 'active'>>) {
+  await updateDoc(doc(db, 'people', id), patch);
+}
+
+/** Admin: create someone ahead of their first login. When they log in with this phone, ensureProfile attaches. */
+export async function adminCreatePerson(p: { name: string; phone?: string; kind: PersonKind; status: PersonStatus; householdId?: string }): Promise<string> {
+  const { setDoc } = await import('firebase/firestore');
+  let householdId = p.householdId;
+  if (!householdId) {
+    const h = doc(collection(db, 'households'));
+    await setDoc(h, { createdAt: serverTimestamp() });
+    householdId = h.id;
+  }
+  const ref = await addDoc(collection(db, 'people'), {
+    name: p.name, kind: p.kind, status: p.status, householdId, active: true, visitCount: 0, createdAt: serverTimestamp(),
+    ...(p.phone ? { phone: p.phone } : {}),
+  });
+  return ref.id;
 }

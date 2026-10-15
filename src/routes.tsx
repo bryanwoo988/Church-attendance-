@@ -6,6 +6,8 @@ import ScannerPage from './checkin/ScannerPage';
 import SelfCheckinPage from './checkin/SelfCheckinPage';
 import WelcomePage from './welcome/WelcomePage';
 import OfferingPage from './offering/OfferingPage';
+import PeoplePage from './admin/PeoplePage';
+import NewcomersPage from './admin/NewcomersPage';
 import HomePage from './member/HomePage';
 import FamilyPage from './member/FamilyPage';
 import MyDataPage from './member/MyDataPage';
@@ -20,6 +22,8 @@ export const router = createBrowserRouter([
       { path: 'me', element: <RequireAuth><MyDataPage /></RequireAuth> },
       { path: 'login', element: <LoginPage /> },
       { path: 'welcome', element: <WelcomePage /> },
+      { path: 'admin/people', element: <RequireRole any={['admin']}><PeoplePage /></RequireRole> },
+      { path: 'admin/newcomers', element: <RequireRole any={['admin']}><NewcomersPage /></RequireRole> },
       { path: 'offering', element: <RequireAuth><OfferingPage /></RequireAuth> },
       { path: 'checkin', element: <RequireAuth><SelfCheckinPage /></RequireAuth> },
       { path: 'scan', element: <RequireRole any={['scanner', 'leader', 'admin']}><ScannerPage /></RequireRole> },

@@ -216,3 +216,15 @@ describe('payment QR in settings', () => {
     await assertFails(updateDoc(doc(as('u_admin'), 'settings/church'), { paymentQrDataUrl: 'data:image/png;base64,' + 'A'.repeat(900_001) }));
   });
 });
+
+describe('households', () => {
+  it('admin can create a household', async () => {
+    await assertSucceeds(setDoc(doc(as('u_admin'), 'households/hx'), { createdAt: serverTimestamp() }));
+  });
+  it('member cannot create a household', async () => {
+    await assertFails(setDoc(doc(as('u_mem'), 'households/hy'), { createdAt: serverTimestamp() }));
+  });
+  it('admin can list users', async () => {
+    await assertSucceeds(getDoc(doc(as('u_admin'), 'users/u_mem')));
+  });
+});

@@ -33,6 +33,7 @@ service cloud.firestore {
 
     match /households/{hid} {
       allow read: if signedIn() && (myHousehold() == hid || isAdmin());
+      allow create, update: if isAdmin();
     }
 
     match /people/{pid} {
