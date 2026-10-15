@@ -38,8 +38,11 @@ export const mergePeople = onCall<{ fromPersonId: string; intoPersonId: string }
     ...(firsts[0] ? { firstVisitDate: firsts[0] } : {}),
     ...(lasts.length ? { lastVisitDate: lasts[lasts.length - 1] } : {}),
     ...(!intoSnap.get('accountUid') && fromSnap.get('accountUid') ? { accountUid: fromSnap.get('accountUid') } : {}),
+    ...(!intoSnap.get('phone') && fromSnap.get('phone') ? { phone: fromSnap.get('phone') } : {}),
+    ...(intoSnap.get('contactConsent') === undefined && fromSnap.get('contactConsent') !== undefined ? { contactConsent: fromSnap.get('contactConsent') } : {}),
+    ...(!intoSnap.get('pdpaConsentAt') && fromSnap.get('pdpaConsentAt') ? { pdpaConsentAt: fromSnap.get('pdpaConsentAt') } : {}),
   });
-  batch.update(fromSnap.ref, { active: false, mergedInto: intoId, accountUid: FieldValue.delete() });
+  batch.update(fromSnap.ref, { active: false, mergedInto: intoId, accountUid: FieldValue.delete(), phone: FieldValue.delete() });
   if (fromSnap.get('accountUid') && !intoSnap.get('accountUid')) {
     batch.update(db.doc(`users/${fromSnap.get('accountUid')}`), { personId: intoId, householdId: intoSnap.get('householdId') });
   }
@@ -93,11 +96,15 @@ export const deleteMyData = onCall<{ confirm?: string }>({ region: REGION }, asy
   if (request.data?.confirm !== 'DELETE') throw new HttpsError('invalid-argument', 'profile.confirmDelete');
   const user = await requireUser(request);
   const members = await db.collection('people').where('householdId', '==', user.householdId).get();
-  await erasePeople(members.docs.map((d) => d.id));
+  // Other account holders in the same household keep their data (and the household).
+  const otherAccounts = members.docs.filter((d) => d.get('accountUid') && d.get('accountUid') !== user.uid);
+  const toErase = members.docs.filter((d) => d.id === user.personId || (!d.get('accountUid') && otherAccounts.length === 0));
+  await erasePeople(toErase.map((d) => d.id));
   const offs = await db.collection('offerings').where('uid', '==', user.uid).get();
   await Promise.all(offs.docs.map((o) => o.ref.update({ uid: 'deleted', personId: 'deleted', householdId: 'deleted' })));
   await db.doc(`users/${user.uid}`).delete();
-  await db.doc(`households/${user.householdId}`).delete();
+  if (otherAccounts.length === 0) await db.doc(`households/${user.householdId}`).delete();
+  else await db.doc(`households/${user.householdId}`).set({ ownerUid: otherAccounts[0].get('accountUid') }, { merge: true });
   try {
     await getAuth().deleteUser(user.uid);
   } catch (e: any) {

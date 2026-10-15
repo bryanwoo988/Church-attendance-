@@ -92,3 +92,27 @@ describe('deletePersonData', () => {
     expect(await callFn('deletePersonData', { personId: 'p_kid' }, FIN)).toMatchObject({ ok: false, status: 'PERMISSION_DENIED' });
   });
 });
+
+describe('deleteMyData with two accounts in one household', () => {
+  it('keeps the other account holder and their household intact', async () => {
+    await db.doc('people/p_spouse').set({ name: 'Spouse', householdId: 'h1', kind: 'adult', status: 'member', accountUid: 'u_sp', active: true, visitCount: 0 });
+    await db.doc('users/u_sp').set({ personId: 'p_spouse', householdId: 'h1', roles: [] });
+    await db.doc('offerings/o_sp').set({ uid: 'u_sp', personId: 'p_spouse', householdId: 'h1', date: '2026-10-01', amountSen: 100, category: 'x', createdAt: new Date() });
+    const r = await callFn('deleteMyData', { confirm: 'DELETE' }, MEM);
+    expect(r.ok).toBe(true);
+    expect((await db.doc('people/p_mem').get()).exists).toBe(false);
+    expect((await db.doc('people/p_spouse').get()).exists).toBe(true);
+    expect((await db.doc('people/p_kid').get()).exists).toBe(true);
+    expect((await db.doc('households/h1').get()).exists).toBe(true);
+    expect((await db.doc('offerings/o_sp').get()).get('uid')).toBe('u_sp');
+  });
+});
+
+describe('mergePeople keeps the phone', () => {
+  it('copies phone and consent to the target when it has none', async () => {
+    await db.doc('people/p_vis').set({ name: 'Vis', householdId: 'h3', kind: 'adult', status: 'visitor', phone: '+60111111111', contactConsent: true, active: true, visitCount: 2 });
+    await db.doc('people/p_made').set({ name: 'Made by admin', householdId: 'h4', kind: 'adult', status: 'member', active: true, visitCount: 0 });
+    await callFn('mergePeople', { fromPersonId: 'p_vis', intoPersonId: 'p_made' }, ADMIN);
+    expect((await db.doc('people/p_made').get()).data()).toMatchObject({ phone: '+60111111111', contactConsent: true });
+  });
+});

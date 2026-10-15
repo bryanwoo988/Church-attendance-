@@ -34,8 +34,18 @@ export const ensureProfile = onCall<Req, Promise<Res>>({ region: REGION }, async
     if (match) {
       personId = match.id;
       householdId = match.get('householdId');
-      tx.update(match.ref, { accountUid: uid });
-      tx.set(db.doc(`households/${householdId}`), { ownerUid: uid }, { merge: true });
+      const hRef = db.doc(`households/${householdId}`);
+      const owner = (await tx.get(hRef)).get('ownerUid');
+      if (owner && owner !== uid) {
+        // A family member with their own phone: give them their own household (转出) instead of taking over.
+        const newH = db.collection('households').doc();
+        householdId = newH.id;
+        tx.set(newH, { ownerUid: uid, createdAt: FieldValue.serverTimestamp() });
+        tx.update(match.ref, { accountUid: uid, householdId });
+      } else {
+        tx.update(match.ref, { accountUid: uid });
+        tx.set(hRef, { ownerUid: uid }, { merge: true });
+      }
     } else {
       if (!name) return { needsName: true };
       const hRef = db.collection('households').doc();

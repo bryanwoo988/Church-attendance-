@@ -63,3 +63,29 @@ describe('submitVisitorForm', () => {
     expect(await callFn('submitVisitorForm', form())).toMatchObject({ ok: false, status: 'RESOURCE_EXHAUSTED' });
   });
 });
+
+describe('submitVisitorForm hardening', () => {
+  it('does not alter an existing member: no new family, consent untouched', async () => {
+    await db.doc('households/h1').set({ ownerUid: 'u1' });
+    await db.doc('people/p1').set({ name: 'Member', phone: '+60123456789', accountUid: 'u1', householdId: 'h1', kind: 'adult', status: 'member', active: true, visitCount: 0, contactConsent: false });
+    const r = await callFn<any>('submitVisitorForm', form({ familyNames: ['Fake 1', 'Fake 2'], contactConsent: true }));
+    expect(r.ok).toBe(true);
+    expect((await db.collection('people').get()).size).toBe(1);
+    expect((await db.doc('people/p1').get()).get('contactConsent')).toBe(false);
+  });
+
+  it('does not overwrite an existing scanner attendance', async () => {
+    await db.doc('households/h1').set({});
+    await db.doc('people/p1').set({ name: 'V', phone: '+60123456789', householdId: 'h1', kind: 'adult', status: 'visitor', active: true, visitCount: 1, lastVisitDate: lastWeek });
+    await db.doc(`attendance/sunday-${today}_p1`).set({ meetingId: `sunday-${today}`, personId: 'p1', date: today, method: 'scanner', byUid: 'u_scan' });
+    await callFn('submitVisitorForm', form());
+    expect((await db.doc(`attendance/sunday-${today}_p1`).get()).data()).toMatchObject({ method: 'scanner', byUid: 'u_scan' });
+  });
+
+  it('does not store the phone number in rate-limit document ids', async () => {
+    await callFn('submitVisitorForm', form());
+    const ids = (await db.collection('rateLimits').get()).docs.map((d) => d.id);
+    expect(ids.length).toBe(1);
+    expect(ids[0]).not.toContain('60123456789');
+  });
+});

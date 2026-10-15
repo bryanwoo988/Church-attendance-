@@ -46,3 +46,17 @@ describe('ensureProfile', () => {
     expect(r).toMatchObject({ ok: false, status: 'UNAUTHENTICATED' });
   });
 });
+
+describe('ensureProfile for a family member with their own phone', () => {
+  it('moves them to their own household instead of taking over the parent household', async () => {
+    await db.doc('households/h1').set({ ownerUid: 'u_parent' });
+    await db.doc('people/p_parent').set({ name: 'Parent', phone: '+60199999999', accountUid: 'u_parent', householdId: 'h1', kind: 'adult', status: 'member', active: true, visitCount: 0 });
+    await db.doc('people/p_teen').set({ name: 'Teen', phone: PHONE, householdId: 'h1', kind: 'adult', status: 'member', active: true, visitCount: 0 });
+    const r = await callFn<any>('ensureProfile', {}, { uid: 'u_teen', phone: PHONE });
+    if (!r.ok) throw new Error(r.message);
+    expect(r.data.personId).toBe('p_teen');
+    expect(r.data.householdId).not.toBe('h1');
+    expect((await db.doc('households/h1').get()).get('ownerUid')).toBe('u_parent');
+    expect((await db.doc('people/p_teen').get()).get('householdId')).toBe(r.data.householdId);
+  });
+});
