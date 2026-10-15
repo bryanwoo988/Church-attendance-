@@ -182,3 +182,43 @@ export async function fetchExportData(from: string, to: string) {
 export function useOfferingsBetween(from: string, to: string): Offering[] | undefined {
   return useLive('offerings', [where('date', '>=', from), where('date', '<=', to), orderBy('date', 'desc')], offeringFrom, [from, to]);
 }
+
+export function useGroupMeetings(groupId: string | undefined, from: string, to: string): Meeting[] | undefined {
+  return useLive(
+    groupId ? 'meetings' : null,
+    groupId ? [where('groupId', '==', groupId), where('date', '>=', from), where('date', '<=', to)] : [],
+    meetingFrom,
+    [groupId, from, to],
+  );
+}
+
+/** Attendance for up to 30 meetings at a time (Firestore 'in' limit), merged. */
+export function useAttendanceForMeetings(meetingIds: string[]): Attendance[] | undefined {
+  const [rows, setRows] = useState<Attendance[]>();
+  const key = meetingIds.join(',');
+  useEffect(() => {
+    if (meetingIds.length === 0) {
+      setRows([]);
+      return;
+    }
+    const chunks: string[][] = [];
+    for (let i = 0; i < meetingIds.length; i += 30) chunks.push(meetingIds.slice(i, i + 30));
+    const parts: Attendance[][] = chunks.map(() => []);
+    const loaded = new Set<number>();
+    setRows(undefined);
+    const unsubs = chunks.map((ids, i) =>
+      onSnapshot(
+        query(collection(db, 'attendance'), where('meetingId', 'in', ids)),
+        (snap) => {
+          parts[i] = snap.docs.map(attendanceFrom);
+          loaded.add(i);
+          if (loaded.size === chunks.length) setRows(parts.flat());
+        },
+        () => setRows([]),
+      ),
+    );
+    return () => unsubs.forEach((u) => u());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return rows;
+}

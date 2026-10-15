@@ -61,5 +61,24 @@ export function buildExportSheets(input: RateInput & { offerings: Offering[] }):
     ],
   };
 
-  return [attendanceSheet, offeringSheet, { name: '合并表 Combined', rows: combined }, ratesSheet];
+  const totals = new Map<string, { name: string; count: number; sen: number }>();
+  for (const o of offs) {
+    const name = nameOf(o.personId);
+    const key = o.personId === 'deleted' || name === DELETED ? 'deleted' : o.personId;
+    const t = totals.get(key) ?? { name, count: 0, sen: 0 };
+    t.count += 1;
+    t.sen += o.amountSen;
+    totals.set(key, t);
+  }
+  const totalRows = [...totals.values()].sort((a, b) => b.sen - a.sen);
+  const totalsSheet: Sheet = {
+    name: '奉献合计 Totals',
+    rows: [
+      ['名字 Name', '笔数 Count', '合计 RM'],
+      ...totalRows.map((t) => [t.name, t.count, senToRinggit(t.sen)]),
+      ['总计 Total', offs.length, senToRinggit(offs.reduce((s, o) => s + o.amountSen, 0))],
+    ],
+  };
+
+  return [attendanceSheet, offeringSheet, totalsSheet, { name: '合并表 Combined', rows: combined }, ratesSheet];
 }

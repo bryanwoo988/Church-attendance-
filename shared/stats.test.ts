@@ -35,3 +35,22 @@ describe('attendanceRates', () => {
     expect(r.groupRates).toEqual([{ groupId: 'g1', rate: 0.5 }]);
   });
 });
+
+import { groupAttendanceTable } from './stats';
+
+describe('groupAttendanceTable', () => {
+  it('builds member rows with marks per group meeting and a rate', () => {
+    const g: Group = { id: 'g1', name: 'G', leaderUids: [], memberPersonIds: ['a', 'b'] };
+    const m1: Meeting = { id: 'gm1', type: 'group', title: 'G', date: '2026-10-07', groupId: 'g1', checkinMode: 'always' };
+    const m2: Meeting = { id: 'gm2', type: 'group', title: 'G', date: '2026-10-14', groupId: 'g1', checkinMode: 'always' };
+    const other: Meeting = { id: 'x', type: 'group', title: 'X', date: '2026-10-14', groupId: 'g2', checkinMode: 'always' };
+    const people = [P('a', { name: 'Ann' }), P('b', { name: 'Ben', firstVisitDate: '2026-10-10' }), P('c')];
+    const att = [A('gm1', 'a', '2026-10-07'), A('gm2', 'a', '2026-10-14'), A('gm2', 'b', '2026-10-14')];
+    const t = groupAttendanceTable(g, people, [m2, other, m1], att);
+    expect(t.meetings.map((m) => m.id)).toEqual(['gm1', 'gm2']);
+    expect(t.rows).toEqual([
+      { personId: 'a', name: 'Ann', marks: [true, true], attended: 2, expected: 2, rate: 1 },
+      { personId: 'b', name: 'Ben', marks: [null, true], attended: 1, expected: 1, rate: 1 },
+    ]);
+  });
+});

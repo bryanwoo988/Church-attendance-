@@ -228,3 +228,15 @@ describe('households', () => {
     await assertSucceeds(getDoc(doc(as('u_admin'), 'users/u_mem')));
   });
 });
+
+describe('leader attendance list', () => {
+  it('leader lists attendance of own group meeting', async () => {
+    const { query, where, getDocs } = await import('firebase/firestore');
+    await assertSucceeds(getDocs(query(collection(as('u_lead'), 'attendance'), where('meetingId', 'in', ['mg1']))));
+  });
+  it('leader cannot list attendance of another group meeting', async () => {
+    const { query, where, getDocs } = await import('firebase/firestore');
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'attendance/mg2_p_mem'), att('mg2', 'p_mem', 'u_admin')));
+    await assertFails(getDocs(query(collection(as('u_lead'), 'attendance'), where('meetingId', 'in', ['mg2']))));
+  });
+});

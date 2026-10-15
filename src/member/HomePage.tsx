@@ -42,6 +42,7 @@ export default function HomePage() {
             {has('admin') && <Link className="btn" to="/admin/people">{t('home.people')}</Link>}
             {has('admin') && <Link className="btn" to="/admin/newcomers">{t('home.newcomers')}</Link>}
             {(has('admin') || has('leader')) && <Link className="btn" to="/admin/groups">{t('home.groups')}</Link>}
+            {(has('admin') || has('leader')) && <Link className="btn" to="/leader/attendance">{t('home.groupAtt')}</Link>}
             {has('admin') && <Link className="btn" to="/admin/posters">{t('home.posters')}</Link>}
             {has('admin') && <Link className="btn" to="/admin/settings">{t('home.settings')}</Link>}
             {(has('finance') || has('admin')) && <Link className="btn" to="/finance/offerings">{t('home.finance')}</Link>}

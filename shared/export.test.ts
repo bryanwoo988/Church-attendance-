@@ -17,9 +17,9 @@ function sheet(name: string, offerings: Offering[] = []) {
 }
 
 describe('buildExportSheets', () => {
-  it('produces the four sheets with bilingual headers', () => {
+  it('produces the five sheets with bilingual headers', () => {
     const names = buildExportSheets({ ...input, offerings: [] }).map((s) => s.name);
-    expect(names).toEqual(['出席记录 Attendance', '奉献记录 Offerings', '合并表 Combined', '出席率 Rates']);
+    expect(names).toEqual(['出席记录 Attendance', '奉献记录 Offerings', '奉献合计 Totals', '合并表 Combined', '出席率 Rates']);
     expect(sheet('出席记录 Attendance')[0]).toEqual(['日期 Date', '聚会 Meeting', '名字 Name', '方式 Method']);
   });
 
@@ -43,5 +43,15 @@ describe('buildExportSheets', () => {
     const rows = sheet('奉献记录 Offerings', [O('mom', '2026-10-18', 5050), O('deleted', '2026-10-18', 100)]);
     expect(rows[1]).toEqual(['2026-10-18', 'Mary', 'x', 50.5]);
     expect(rows[2]).toEqual(['2026-10-18', '（已删除）', 'x', 1]);
+  });
+});
+
+describe('offering totals sheet', () => {
+  it('sums each person over the period, with deleted records grouped', () => {
+    const rows = sheet('奉献合计 Totals', [O('mom', '2026-10-04', 5000), O('mom', '2026-10-18', 2550), O('deleted', '2026-10-18', 100), O('mom', '2026-11-01', 999)]);
+    expect(rows[0]).toEqual(['名字 Name', '笔数 Count', '合计 RM']);
+    expect(rows).toContainEqual(['Mary', 2, 75.5]);
+    expect(rows).toContainEqual(['（已删除）', 1, 1]);
+    expect(rows[rows.length - 1]).toEqual(['总计 Total', 3, 76.5]);
   });
 });

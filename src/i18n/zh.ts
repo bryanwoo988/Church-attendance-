@@ -207,11 +207,17 @@ export const zh = {
   "poster.meetingTitle": "聚会签到 Check-in",
   "export.from": "由",
   "export.to": "至",
-  "export.hint": "Excel 里有四张表：出席记录、奉献记录、合并表、出席率。也可以上传到 Google Drive 用 Google Sheets 打开。",
+  "export.hint": "Excel 里有五张表：出席记录、奉献记录、奉献合计、合并表、出席率。也可以上传到 Google Drive 用 Google Sheets 打开。",
   "export.download": "导出 Excel",
   "export.done": "已下载",
   "export.badRange": "开始日期不能晚于结束日期",
   "finance.total": "合计 {amount}（{n} 笔）",
   "finance.reconcile": "金额由会友自己填写，请定期对照银行月结单。",
+  "groupAtt.title": "小组出席",
+  "groupAtt.rate": "出席率",
+  "groupAtt.noGroups": "你还没有负责的小组",
+  "groupAtt.noMembers": "这个小组还没有组员",
+  "groupAtt.noMeetings": "这段时间没有小组聚会",
+  "home.groupAtt": "小组出席",
 };
 export type MessageKey = keyof typeof zh;

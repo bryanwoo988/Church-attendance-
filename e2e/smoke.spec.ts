@@ -29,7 +29,7 @@ async function login(page: Page, local: string, e164: string, name: string) {
   await expect(page.getByLabel('验证码')).toBeVisible();
   await page.getByLabel('验证码').fill(await latestCode(e164));
   await page.getByRole('button', { name: '登录' }).click();
-  await expect(page.getByLabel('名字')).toBeVisible();
+  await expect(page.getByLabel('名字')).toBeVisible({ timeout: 15_000 }); // first callable can be a cold start
   await page.getByLabel('名字').fill(name);
   await page.getByRole('button', { name: '继续' }).click();
   await expect(page.getByRole('link', { name: '签到', exact: true })).toBeVisible();

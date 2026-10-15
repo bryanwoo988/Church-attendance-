@@ -53,3 +53,22 @@ export function attendanceRates(input: RateInput): { personRates: PersonRate[]; 
 
   return { personRates, groupRates };
 }
+
+export interface GroupRow { personId: string; name: string; marks: (boolean | null)[]; attended: number; expected: number; rate: number | null }
+
+/** One row per active group member, one column per group meeting; null = before they first came. */
+export function groupAttendanceTable(group: Group, people: Person[], meetings: Meeting[], attendance: Attendance[]): { meetings: Meeting[]; rows: GroupRow[] } {
+  const ms = meetings.filter((m) => m.groupId === group.id).sort((a, b) => a.date.localeCompare(b.date));
+  const seen = new Set(attendance.map((a) => `${a.meetingId}|${a.personId}`));
+  const rows = group.memberPersonIds
+    .map((id) => people.find((p) => p.id === id && p.active))
+    .filter((p): p is Person => !!p)
+    .map((p) => {
+      const start = personStart(p);
+      const marks = ms.map((m) => (m.date < start ? null : seen.has(`${m.id}|${p.id}`)));
+      const expected = marks.filter((x) => x !== null).length;
+      const attended = marks.filter((x) => x === true).length;
+      return { personId: p.id, name: p.name, marks, attended, expected, rate: ratio(attended, expected) };
+    });
+  return { meetings: ms, rows };
+}
