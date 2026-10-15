@@ -80,4 +80,7 @@ export const en: Record<MessageKey, string> = {
   "scan.cameraError": "Cannot open the camera — please allow camera access",
   "checkin.whoCame": "Who came today?",
   "checkin.confirm": "Check in ({n})",
+  "checkin.closed": "Check-in is not open right now",
+  "checkin.noMeeting": "There is no meeting in progress today",
+  "checkin.notYourFamily": "You can only check in your own family",
 };

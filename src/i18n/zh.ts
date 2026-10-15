@@ -79,5 +79,8 @@ export const zh = {
   "scan.cameraError": "无法打开相机，请允许相机权限",
   "checkin.whoCame": "今天谁来了？",
   "checkin.confirm": "确认签到（{n} 人）",
+  "checkin.closed": "不在签到时间内",
+  "checkin.noMeeting": "今天没有进行中的聚会",
+  "checkin.notYourFamily": "只能帮自己的家人签到",
 };
 export type MessageKey = keyof typeof zh;
