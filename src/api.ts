@@ -91,3 +91,17 @@ export async function fetchPersonWithFamily(personId: string): Promise<{ person:
   const fam = await getDocs(query(collection(db, 'people'), where('householdId', '==', person.householdId)));
   return { person, family: fam.docs.map(personFrom).filter((p) => p.active) };
 }
+
+export async function addOffering(o: { uid: string; personId: string; householdId: string; amountSen: number; category: string; date: string }): Promise<string> {
+  const ref = await addDoc(collection(db, 'offerings'), { ...o, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function updateOwnOffering(id: string, amountSen: number, category: string) {
+  await updateDoc(doc(db, 'offerings', id), { amountSen, category, updatedAt: serverTimestamp() });
+}
+
+export async function deleteOwnOffering(id: string) {
+  const { deleteDoc } = await import('firebase/firestore');
+  await deleteDoc(doc(db, 'offerings', id));
+}
