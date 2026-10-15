@@ -38,3 +38,6 @@ h1 { font-size: 1.4rem; margin: 4px 0 14px; } h2 { font-size: 1.15rem; margin: 1
 .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
 .chip { border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 999px; padding: 6px 14px; font-size: 0.95rem; }
 .chip.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.camera video { width: 100%; border-radius: 14px; background: #000; aspect-ratio: 1; object-fit: cover; }
+.feedback { text-align: center; font-size: 1.2rem; }
+.feedback.ok { border-color: var(--ok); } .feedback.warn { border-color: var(--warn); } .feedback.err { border-color: var(--err); }

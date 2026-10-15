@@ -67,5 +67,17 @@ export const zh = {
   "home.finance": "奉献记录",
   "home.export": "导出 Excel",
   "home.signOut": "登出",
+  "scan.notChurchQr": "这不是教会会友的 QR 码",
+  "scan.savedOffline": "已记录（离线，稍后同步）",
+  "scan.already": "已经签过",
+  "scan.ok": "✓ 已签到",
+  "scan.unknownPerson": "找不到这位会友",
+  "scan.unknownName": "（离线，未能显示名字）",
+  "scan.noMeeting": "今天没有可以签到的聚会。请先在「聚会」建立。",
+  "scan.meeting": "聚会",
+  "scan.recordingFor": "正在为「{title}」签到",
+  "scan.cameraError": "无法打开相机，请允许相机权限",
+  "checkin.whoCame": "今天谁来了？",
+  "checkin.confirm": "确认签到（{n} 人）",
 };
 export type MessageKey = keyof typeof zh;

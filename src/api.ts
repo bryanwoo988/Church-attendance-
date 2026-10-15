@@ -81,3 +81,13 @@ export async function addFamilyMember(p: { householdId: string; name: string; ki
 export async function updateFamilyMember(id: string, patch: { name?: string; kind?: PersonKind; active?: boolean }) {
   await updateDoc(doc(db, 'people', id), patch);
 }
+
+export async function fetchPersonWithFamily(personId: string): Promise<{ person: Person; family: Person[] } | null> {
+  const { getDoc, getDocs } = await import('firebase/firestore');
+  const snap = await getDoc(doc(db, 'people', personId));
+  if (!snap.exists()) return null;
+  const person = personFrom(snap);
+  if (!person.active) return null;
+  const fam = await getDocs(query(collection(db, 'people'), where('householdId', '==', person.householdId)));
+  return { person, family: fam.docs.map(personFrom).filter((p) => p.active) };
+}
