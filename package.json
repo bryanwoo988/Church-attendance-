@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "tsc -p tsconfig.json && vite build",
     "test": "vitest run --project unit",
-    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-church \"vitest run --project rules\"",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-church \"vitest run --project rules\"",
     "test:functions": "npm --prefix functions run build && firebase emulators:exec --only auth,firestore,functions --project demo-church \"vitest run --project functions\"",
     "emulators": "firebase emulators:start --project demo-church",
     "e2e": "playwright test",

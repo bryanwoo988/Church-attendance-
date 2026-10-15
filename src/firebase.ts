@@ -6,7 +6,6 @@ import {
   persistentMultipleTabManager,
   connectFirestoreEmulator,
 } from 'firebase/firestore';
-import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
@@ -17,7 +16,6 @@ export const app = initializeApp({
   apiKey: env.VITE_FIREBASE_API_KEY || 'demo-key',
   authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: env.VITE_FIREBASE_PROJECT_ID || 'demo-church',
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || 'demo-church.appspot.com',
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: env.VITE_FIREBASE_APP_ID,
 });
@@ -34,13 +32,11 @@ auth.languageCode = 'zh';
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
 });
-export const storage = getStorage(app);
 export const functions = getFunctions(app, 'asia-southeast1');
 
 if (useEmulators) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  connectStorageEmulator(storage, '127.0.0.1', 9199);
   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
 }
 

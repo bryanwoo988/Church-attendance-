@@ -80,7 +80,7 @@ export interface Offering {
 }
 
 export interface ChurchSettings {
-  paymentQrPath?: string;
+  paymentQrDataUrl?: string;
   sunday: { weekday: number; start: string; end: string; checkinMode: CheckinMode };
   offeringCategories: string[];
 }
