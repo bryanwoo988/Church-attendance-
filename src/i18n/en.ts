@@ -206,4 +206,12 @@ export const en: Record<MessageKey, string> = {
   "poster.welcomeTitle": "新朋友 Welcome",
   "poster.welcomeCaption": "第一次来？扫码留下资料 · First time? Scan to say hello",
   "poster.meetingTitle": "聚会签到 Check-in",
+  "export.from": "From",
+  "export.to": "To",
+  "export.hint": "The file has four sheets: attendance, offerings, combined and rates. It also opens in Google Sheets.",
+  "export.download": "Download Excel",
+  "export.done": "Downloaded",
+  "export.badRange": "Start date must be on or before end date",
+  "finance.total": "Total {amount} ({n} records)",
+  "finance.reconcile": "Amounts are self-reported — please reconcile with the bank statement.",
 };

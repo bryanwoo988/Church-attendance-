@@ -12,6 +12,8 @@ import MeetingsPage from './admin/MeetingsPage';
 import GroupsPage from './admin/GroupsPage';
 import PosterPage from './admin/PosterPage';
 import SettingsPage from './admin/SettingsPage';
+import ExportPage from './finance/ExportPage';
+import FinanceOfferingsPage from './finance/OfferingsPage';
 import HomePage from './member/HomePage';
 import FamilyPage from './member/FamilyPage';
 import MyDataPage from './member/MyDataPage';
@@ -31,6 +33,8 @@ export const router = createBrowserRouter([
       { path: 'admin/groups', element: <RequireRole any={['admin', 'leader']}><GroupsPage /></RequireRole> },
       { path: 'admin/posters', element: <RequireRole any={['admin', 'leader']}><PosterPage /></RequireRole> },
       { path: 'admin/settings', element: <RequireRole any={['admin']}><SettingsPage /></RequireRole> },
+      { path: 'finance/export', element: <RequireRole any={['finance', 'admin']}><ExportPage /></RequireRole> },
+      { path: 'finance/offerings', element: <RequireRole any={['finance', 'admin']}><FinanceOfferingsPage /></RequireRole> },
       { path: 'admin/newcomers', element: <RequireRole any={['admin']}><NewcomersPage /></RequireRole> },
       { path: 'offering', element: <RequireAuth><OfferingPage /></RequireAuth> },
       { path: 'checkin', element: <RequireAuth><SelfCheckinPage /></RequireAuth> },

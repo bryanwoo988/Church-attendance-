@@ -159,3 +159,26 @@ export async function createGroup(name: string): Promise<string> {
 export async function updateGroup(id: string, patch: Partial<Pick<Group, 'name' | 'leaderUids' | 'memberPersonIds'>>) {
   await updateDoc(doc(db, 'groups', id), patch);
 }
+
+export async function fetchExportData(from: string, to: string) {
+  const { getDocs } = await import('firebase/firestore');
+  const range = (col: string) => getDocs(query(collection(db, col), where('date', '>=', from), where('date', '<=', to)));
+  const [people, groups, meetings, attendance, offerings] = await Promise.all([
+    getDocs(collection(db, 'people')),
+    getDocs(collection(db, 'groups')),
+    range('meetings'),
+    range('attendance'),
+    range('offerings'),
+  ]);
+  return {
+    people: people.docs.map(personFrom),
+    groups: groups.docs.map(groupFrom),
+    meetings: meetings.docs.map(meetingFrom),
+    attendance: attendance.docs.map(attendanceFrom),
+    offerings: offerings.docs.map(offeringFrom),
+  };
+}
+
+export function useOfferingsBetween(from: string, to: string): Offering[] | undefined {
+  return useLive('offerings', [where('date', '>=', from), where('date', '<=', to), orderBy('date', 'desc')], offeringFrom, [from, to]);
+}

@@ -205,5 +205,13 @@ export const zh = {
   "poster.welcomeTitle": "新朋友 Welcome",
   "poster.welcomeCaption": "第一次来？扫码留下资料 · First time? Scan to say hello",
   "poster.meetingTitle": "聚会签到 Check-in",
+  "export.from": "由",
+  "export.to": "至",
+  "export.hint": "Excel 里有四张表：出席记录、奉献记录、合并表、出席率。也可以上传到 Google Drive 用 Google Sheets 打开。",
+  "export.download": "导出 Excel",
+  "export.done": "已下载",
+  "export.badRange": "开始日期不能晚于结束日期",
+  "finance.total": "合计 {amount}（{n} 笔）",
+  "finance.reconcile": "金额由会友自己填写，请定期对照银行月结单。",
 };
 export type MessageKey = keyof typeof zh;
