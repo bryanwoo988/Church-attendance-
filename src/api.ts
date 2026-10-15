@@ -134,3 +134,28 @@ export async function adminCreatePerson(p: { name: string; phone?: string; kind:
   });
   return ref.id;
 }
+
+export async function createMeeting(m: Omit<Meeting, 'id' | 'createdAt'>): Promise<string> {
+  const clean = Object.fromEntries(Object.entries(m).filter(([, v]) => v !== undefined));
+  const ref = await addDoc(collection(db, 'meetings'), { ...clean, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function deleteMeeting(id: string) {
+  const { deleteDoc } = await import('firebase/firestore');
+  await deleteDoc(doc(db, 'meetings', id));
+}
+
+export async function saveSettings(patch: Partial<ChurchSettings>) {
+  const { setDoc } = await import('firebase/firestore');
+  await setDoc(doc(db, 'settings', 'church'), patch, { merge: true });
+}
+
+export async function createGroup(name: string): Promise<string> {
+  const ref = await addDoc(collection(db, 'groups'), { name, leaderUids: [], memberPersonIds: [] });
+  return ref.id;
+}
+
+export async function updateGroup(id: string, patch: Partial<Pick<Group, 'name' | 'leaderUids' | 'memberPersonIds'>>) {
+  await updateDoc(doc(db, 'groups', id), patch);
+}
