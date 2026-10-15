@@ -61,3 +61,13 @@ describe('OfferingPage', () => {
     expect(screen.getAllByRole('button', { name: t('offering.edit') })).toHaveLength(1);
   });
 });
+
+describe('OfferingPage offline', () => {
+  it('shows saved when the server does not answer', async () => {
+    addOffering.mockReturnValueOnce(new Promise(() => {}));
+    await goToAmount();
+    await userEvent.type(screen.getByLabelText(t('offering.amount')), '20');
+    await userEvent.click(screen.getByRole('button', { name: t('offering.submit') }));
+    expect(await screen.findByText(t('offering.saved', { amount: 'RM 20.00' }), {}, { timeout: 4000 })).toBeInTheDocument();
+  });
+});

@@ -32,6 +32,7 @@
 1. Firebase 控制台 → **Firestore Database** → **建立数据库**。
 2. 位置选 **asia-southeast1 (Singapore)**（离马来西亚最近，之后不能改）。
 3. 选 **正式版模式**（规则会由我们部署覆盖）。
+4. 设定自动清除：Firestore Database → **TTL**（存留时间）→ **建立政策** → 集合群组填 `rateLimits`，时间戳栏位填 `expiresAt`。这样新朋友表格的防滥用计数会在两天后自动删除。
 
 ## 5. App Check（保护新朋友表格，一定要做）
 

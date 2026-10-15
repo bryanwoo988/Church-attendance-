@@ -60,3 +60,10 @@ describe('makeScanGate', () => {
     expect(gate('https://shop.example', 100)).toBe('ignore');
   });
 });
+
+describe('recordScan when the network hangs', () => {
+  it('returns queued instead of waiting forever while navigator says online', async () => {
+    setDoc.mockReturnValue(new Promise(() => {}));
+    expect(await recordScan('m1', '2026-10-18', ['p1'], 'u1', 20)).toEqual([{ personId: 'p1', status: 'queued' }]);
+  });
+});

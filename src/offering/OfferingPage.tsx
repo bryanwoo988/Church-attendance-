@@ -5,6 +5,7 @@ import { useT, type MessageKey } from '../i18n';
 import { formatSen, parseAmountToSen } from '../../shared/money';
 import { klDate } from '../../shared/dates';
 import MyOfferings from './MyOfferings';
+import { settleWithin } from '../util/settle';
 
 export default function OfferingPage() {
   const { t } = useT();
@@ -27,7 +28,9 @@ export default function OfferingPage() {
     if (!user) return;
     setBusy(true);
     try {
-      await addOffering({ uid: user.uid, personId: user.personId, householdId: user.householdId, amountSen: p.sen, category: category || categories[0], date: klDate(new Date()) });
+      const write = addOffering({ uid: user.uid, personId: user.personId, householdId: user.householdId, amountSen: p.sen, category: category || categories[0], date: klDate(new Date()) });
+      // Saved locally even when offline; Firestore syncs it later. Don't leave the button spinning (a retry would duplicate it).
+      if ((await settleWithin(write)) === 'pending') write.catch(() => {});
       setSavedSen(p.sen);
       setAmount('');
       setStep('done');

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { onAuthStateChanged, signOut as fbSignOut } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db, call } from '../firebase';
 import { personFrom } from '../data';
 import type { Person, Role, UserDoc } from '../../shared/types';
@@ -37,9 +37,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!uid) return;
     let cancelled = false;
     setProfileState('pending');
-    call<object, { needsName: boolean }>('ensureProfile', {})
-      .then((r) => !cancelled && setProfileState(r.needsName ? 'needsName' : 'ok'))
-      .catch(() => !cancelled && setProfileState('error'));
+    const viaFunction = () =>
+      call<object, { needsName: boolean }>('ensureProfile', {})
+        .then((r) => !cancelled && setProfileState(r.needsName ? 'needsName' : 'ok'))
+        .catch(() => !cancelled && setProfileState('error'));
+    // An existing profile (from the server, or the offline cache) is enough to start; the
+    // callable is only needed on first login, so the door scanner still opens without internet.
+    getDoc(doc(db, 'users', uid))
+      .then((s) => {
+        if (cancelled) return;
+        if (s.exists()) setProfileState('ok');
+        else viaFunction();
+      })
+      .catch(() => !cancelled && viaFunction());
     return () => {
       cancelled = true;
     };

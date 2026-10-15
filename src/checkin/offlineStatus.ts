@@ -2,6 +2,7 @@ import { doc, getDocFromCache, serverTimestamp, setDoc } from 'firebase/firestor
 import { db } from '../firebase';
 import { attendanceId } from '../../shared/checkin';
 import { parsePersonalQr } from '../../shared/qr';
+import { settleWithin, SERVER_WAIT_MS } from '../util/settle';
 
 export type ScanStatus = 'ok' | 'already' | 'queued';
 
@@ -9,7 +10,7 @@ export type ScanStatus = 'ok' | 'already' | 'queued';
  * Record door-scanner attendance. Offline writes go to Firestore's local queue and sync later;
  * the deterministic doc id makes a re-sync or a second scan harmless.
  */
-export async function recordScan(meetingId: string, date: string, personIds: string[], byUid: string): Promise<{ personId: string; status: ScanStatus }[]> {
+export async function recordScan(meetingId: string, date: string, personIds: string[], byUid: string, waitMs = SERVER_WAIT_MS): Promise<{ personId: string; status: ScanStatus }[]> {
   return Promise.all(
     personIds.map(async (personId) => {
       const ref = doc(db, 'attendance', attendanceId(meetingId, personId));
@@ -24,7 +25,11 @@ export async function recordScan(meetingId: string, date: string, personIds: str
         return { personId, status: 'queued' as const };
       }
       try {
-        await write;
+        // Wi-Fi can be "connected" with no internet behind it; never block the door on the server.
+        if ((await settleWithin(write, waitMs)) === 'pending') {
+          write.catch(() => {});
+          return { personId, status: 'queued' as const };
+        }
         return { personId, status: 'ok' as const };
       } catch (e) {
         // Rules allow create only, so an existing record surfaces as permission-denied.
