@@ -1,0 +1,135 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function hasProfile() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function roles() { return hasProfile() ? me().roles : []; }
+    function hasRole(r) { return r in roles(); }
+    function hasAnyRole(rs) { return roles().hasAny(rs); }
+    function isAdmin() { return hasRole('admin'); }
+    function myHousehold() { return hasProfile() ? me().householdId : ''; }
+    function isLeaderOf(groupId) {
+      return hasRole('leader')
+        && exists(/databases/$(database)/documents/groups/$(groupId))
+        && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.leaderUids;
+    }
+    function meetingGroup(meetingId) {
+      return get(/databases/$(database)/documents/meetings/$(meetingId)).data.get('groupId', '');
+    }
+    function onlyChanged(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+    function validAmount(v) { return v is int && v >= 1 && v <= 10000000; }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow update: if signedIn() && (
+        (request.auth.uid == uid && onlyChanged(['lang']))
+        || (isAdmin() && onlyChanged(['roles']) && request.resource.data.roles is list)
+      );
+    }
+
+    match /households/{hid} {
+      allow read: if signedIn() && (myHousehold() == hid || isAdmin());
+      allow create, update: if isAdmin();
+    }
+
+    match /people/{pid} {
+      allow read: if signedIn() && (
+        resource.data.householdId == myHousehold()
+        || hasAnyRole(['scanner', 'leader', 'admin', 'finance'])
+      );
+      allow create: if isAdmin() || (
+        hasProfile()
+        && request.resource.data.householdId == myHousehold()
+        && request.resource.data.keys().hasOnly(['name', 'kind', 'householdId', 'status', 'active', 'visitCount', 'createdAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && request.resource.data.kind in ['adult', 'child']
+        && request.resource.data.status == get(/databases/$(database)/documents/people/$(me().personId)).data.status
+        && request.resource.data.active == true
+        && request.resource.data.visitCount == 0
+        && request.resource.data.createdAt == request.time
+      );
+      allow update: if isAdmin() || (
+        hasProfile()
+        && resource.data.householdId == myHousehold()
+        && onlyChanged(['name', 'kind', 'active'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && request.resource.data.kind in ['adult', 'child']
+        && request.resource.data.active is bool
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /groups/{gid} {
+      allow read: if signedIn();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (isLeaderOf(gid) && onlyChanged(['memberPersonIds']));
+    }
+
+    match /meetings/{mid} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() || (
+        request.resource.data.type == 'group'
+        && request.resource.data.get('groupId', '') != ''
+        && isLeaderOf(request.resource.data.groupId)
+        && (resource == null || isLeaderOf(resource.data.get('groupId', '')))
+      );
+      allow delete: if isAdmin() || isLeaderOf(resource.data.get('groupId', ''));
+    }
+
+    match /attendance/{aid} {
+      allow read: if signedIn() && (
+        hasAnyRole(['scanner', 'admin', 'finance'])
+        || get(/databases/$(database)/documents/people/$(resource.data.personId)).data.householdId == myHousehold()
+        || isLeaderOf(meetingGroup(resource.data.meetingId))
+      );
+      allow create: if signedIn()
+        && aid == request.resource.data.meetingId + '_' + request.resource.data.personId
+        && request.resource.data.method == 'scanner'
+        && request.resource.data.byUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['meetingId', 'personId', 'date', 'method', 'byUid', 'at'])
+        && exists(/databases/$(database)/documents/meetings/$(request.resource.data.meetingId))
+        && (hasAnyRole(['scanner', 'admin']) || isLeaderOf(meetingGroup(request.resource.data.meetingId)));
+      allow delete: if isAdmin();
+    }
+
+    match /offerings/{oid} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || hasAnyRole(['finance', 'admin']));
+      allow create: if hasProfile()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.personId == me().personId
+        && request.resource.data.householdId == me().householdId
+        && request.resource.data.keys().hasOnly(['uid', 'personId', 'householdId', 'date', 'amountSen', 'category', 'createdAt'])
+        && validAmount(request.resource.data.amountSen)
+        && request.resource.data.date is string && request.resource.data.date.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && request.resource.data.category is string && request.resource.data.category.size() <= 60
+        && request.resource.data.createdAt == request.time;
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.time < resource.data.createdAt + duration.value(24, 'h')
+        && onlyChanged(['amountSen', 'category', 'updatedAt'])
+        && validAmount(request.resource.data.amountSen)
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.time < resource.data.createdAt + duration.value(24, 'h');
+
+      match /history/{hid} {
+        allow read: if hasAnyRole(['finance', 'admin']);
+      }
+    }
+
+    match /settings/{sid} {
+      allow read: if signedIn();
+      allow write: if isAdmin() && (
+        !('paymentQrDataUrl' in request.resource.data)
+        || (request.resource.data.paymentQrDataUrl is string
+            && request.resource.data.paymentQrDataUrl.matches('^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$')
+            && request.resource.data.paymentQrDataUrl.size() <= 900000)
+      );
+    }
+  }
+}
