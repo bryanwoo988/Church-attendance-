@@ -30,6 +30,8 @@ export interface Person {
 export interface FamilyPreset {
   name: string;
   personIds: string[];
+  /** Home shows each member's own QR (default). False: one family QR for the whole group. Members with noQr never get one. */
+  qr?: boolean;
 }
 
 export interface Household {
@@ -38,7 +40,7 @@ export interface Household {
   /** Saved combinations to pick from quickly. */
   presets?: FamilyPreset[];
   /** Who is coming on `date` (KL), chosen by the family ahead of time. */
-  today?: { date: string; personIds: string[] };
+  today?: { date: string; personIds: string[]; qr?: boolean };
   createdAt?: Date;
 }
 

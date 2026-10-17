@@ -115,17 +115,19 @@ describe('ScannerPage', () => {
     expect(screen.getAllByRole('checkbox')).toHaveLength(2);
   });
 
-  it("checks in the family's list for today straight away, without the checklist", async () => {
+  it("pre-ticks the family's list for today and waits for the scanner to confirm", async () => {
     fetchPersonWithFamily.mockResolvedValue({
       person: P('k1', 'Timothy', 'child'),
-      family: [P('p1', 'Mary'), P('k1', 'Timothy', 'child'), P('b1', 'Baby', 'child')],
+      family: [P('p1', 'Mary'), P('k1', 'Timothy', 'child'), P('b1', 'Baby', 'child'), P('d1', 'Dad')],
       today: { date: klDate(new Date()), personIds: ['p1', 'b1'] },
     });
-    recordScan.mockResolvedValue([{ personId: 'k1', status: 'ok' }, { personId: 'p1', status: 'ok' }, { personId: 'b1', status: 'ok' }]);
+    recordScan.mockResolvedValue([{ personId: 'k1', status: 'ok' }]);
     renderPage();
     await act(async () => decode('cqr:p:k1'));
-    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(recordScan).not.toHaveBeenCalled();
+    const ticked = (name: string) => (screen.getByRole('checkbox', { name }) as HTMLInputElement).checked;
+    expect([ticked('Timothy'), ticked('Mary'), ticked('Baby'), ticked('Dad')]).toEqual([true, true, true, false]);
+    await act(async () => screen.getByRole('button', { name: t('checkin.confirm', { n: 3 }) }).click());
     expect(recordScan).toHaveBeenCalledWith('sunday-x', '2026-10-18', ['k1', 'p1', 'b1'], 'u_scan');
-    expect(await screen.findByText('Baby')).toBeInTheDocument();
   });
 });

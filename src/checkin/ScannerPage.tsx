@@ -40,6 +40,7 @@ export default function ScannerPage() {
   const gate = useRef(makeScanGate(3000));
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [picker, setPicker] = useState<Person[] | null>(null);
+  const [pickerInitial, setPickerInitial] = useState<string[] | undefined>();
   const [busy, setBusy] = useState(false);
   const [manual, setManual] = useState(false);
   const clearTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -76,12 +77,13 @@ export default function ScannerPage() {
     }
     if (!found) return show({ kind: 'err', msg: 'scan.unknownPerson' });
     const { person, family } = found;
-    // The family already ticked who is coming today: check them all in from this one scan.
+    // The family may have said who is coming today: those start ticked, the scanner confirms.
     const listed = todaysAttendees(found.today, klDate(new Date()), family.map((p) => p.id), person.id);
-    if (listed) return record(listed, listed.map((id) => family.find((p) => p.id === id)!.name));
-    if (family.length > 1) {
+    if (listed || family.length > 1) {
+      const first = listed ?? [person.id];
       setManual(false);
-      setPicker([person, ...family.filter((p) => p.id !== person.id)]);
+      setPickerInitial(listed ?? undefined);
+      setPicker([...first.map((id) => family.find((p) => p.id === id)!), ...family.filter((p) => !first.includes(p.id))]);
       return;
     }
     return record([person.id], [person.name]);
@@ -128,7 +130,7 @@ export default function ScannerPage() {
       )}
       {picker && (
         <div className="card">
-          <FamilyPicker people={picker} busy={busy} onConfirm={(ids) => record(ids, picker.filter((p) => ids.includes(p.id)).map((p) => p.name))} />
+          <FamilyPicker key={picker.map((p) => p.id).join()} people={picker} initial={pickerInitial} busy={busy} onConfirm={(ids) => record(ids, picker.filter((p) => ids.includes(p.id)).map((p) => p.name))} />
           <button className="btn block" style={{ marginTop: 8 }} onClick={() => setPicker(null)}>{t('common.cancel')}</button>
         </div>
       )}

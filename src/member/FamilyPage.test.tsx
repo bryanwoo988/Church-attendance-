@@ -104,14 +104,14 @@ describe('FamilyPage', () => {
   });
 
   it("saves today's attendees, picked via a saved combination", async () => {
-    household = { presets: [{ name: '只有我', personIds: ['p1'] }] };
+    household = { presets: [{ name: '只有我', personIds: ['p1'], qr: false }] };
     renderPage();
     await userEvent.click(screen.getByRole('button', { name: '只有我' }));
     const today = screen.getByRole('group', { name: t('family.todayTitle') });
     expect(within(today).getByLabelText('Mary')).toBeChecked();
     expect(within(today).getByLabelText('Kid')).not.toBeChecked();
     await userEvent.click(screen.getByRole('button', { name: t('family.todaySave') }));
-    expect(saveHousehold).toHaveBeenCalledWith('h1', { today: { date: klDate(new Date()), personIds: ['p1'] } });
+    expect(saveHousehold).toHaveBeenCalledWith('h1', { today: { date: klDate(new Date()), personIds: ['p1'], qr: false } });
   });
 
   it('shows the list already saved for today', () => {
@@ -125,9 +125,10 @@ describe('FamilyPage', () => {
     renderPage();
     const today = screen.getByRole('group', { name: t('family.todayTitle') });
     await userEvent.click(within(today).getByLabelText('Kid'));
+    await userEvent.click(within(today).getByLabelText(t('family.eachQr')));
     await userEvent.type(screen.getByLabelText(t('family.presetName')), '我和孩子');
     await userEvent.click(screen.getByRole('button', { name: t('family.presetSave') }));
-    expect(saveHousehold).toHaveBeenCalledWith('h1', { presets: [{ name: 'A', personIds: ['p1'] }, { name: '我和孩子', personIds: ['p2'] }] });
+    expect(saveHousehold).toHaveBeenCalledWith('h1', { presets: [{ name: 'A', personIds: ['p1'] }, { name: '我和孩子', personIds: ['p2'], qr: false }] });
   });
 
   it('deletes a combination', async () => {

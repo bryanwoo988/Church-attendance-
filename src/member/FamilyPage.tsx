@@ -78,13 +78,17 @@ function TodayCard({ householdId, family }: { householdId: string; family: Perso
   const savedToday = household?.today?.date === today ? household.today.personIds.filter((id) => ids.includes(id)) : [];
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [presetName, setPresetName] = useState('');
+  const [eachQr, setEachQr] = useState(true);
   const [error, setError] = useState<MessageKey | null>(null);
   const [busy, setBusy] = useState(false);
   const savedKey = savedToday.join(',');
+  const savedQr = household?.today?.qr !== false;
 
   useEffect(() => {
-    if (savedKey) setPicked(new Set(savedKey.split(',')));
-  }, [savedKey]);
+    if (!savedKey) return;
+    setPicked(new Set(savedKey.split(',')));
+    setEachQr(savedQr);
+  }, [savedKey, savedQr]);
 
   const toggle = (id: string) => setPicked((s) => {
     const n = new Set(s);
@@ -111,7 +115,7 @@ function TodayCard({ householdId, family }: { householdId: string; family: Perso
     const name = presetName.trim();
     if (!name || pickedIds.length === 0) return;
     if (presets.length >= MAX_PRESETS) return setError('family.presetFull');
-    const next: FamilyPreset[] = [...presets, { name: name.slice(0, 40), personIds: pickedIds }];
+    const next: FamilyPreset[] = [...presets, { name: name.slice(0, 40), personIds: pickedIds, ...(eachQr ? {} : { qr: false }) }];
     await save({ presets: next });
     setPresetName('');
   }
@@ -123,7 +127,7 @@ function TodayCard({ householdId, family }: { householdId: string; family: Perso
       {presets.length > 0 && (
         <div className="chips" style={{ justifyContent: 'flex-start' }}>
           {presets.map((pr) => (
-            <button key={pr.name} type="button" className="chip" onClick={() => setPicked(new Set(pr.personIds))}>{pr.name}</button>
+            <button key={pr.name} type="button" className="chip" onClick={() => { setPicked(new Set(pr.personIds)); setEachQr(pr.qr !== false); }}>{pr.name}</button>
           ))}
         </div>
       )}
@@ -137,10 +141,11 @@ function TodayCard({ householdId, family }: { householdId: string; family: Perso
           </li>
         ))}
       </ul>
+      <label className="check"><input type="checkbox" checked={eachQr} onChange={(e) => setEachQr(e.target.checked)} />{t('family.eachQr')}</label>
       {savedToday.length > 0 && <p className="ok">{t('family.todaySaved', { names: names(savedToday) })}</p>}
       {error && <p className="err" role="alert">{t(error)}</p>}
       <div className="grid2" style={{ marginTop: 10 }}>
-        <button type="button" className="btn primary" disabled={busy || pickedIds.length === 0} onClick={() => save({ today: { date: today, personIds: pickedIds } })}>
+        <button type="button" className="btn primary" disabled={busy || pickedIds.length === 0} onClick={() => save({ today: { date: today, personIds: pickedIds, qr: eachQr } })}>
           {t('family.todaySave')}
         </button>
         {savedToday.length > 0 && (
@@ -153,7 +158,7 @@ function TodayCard({ householdId, family }: { householdId: string; family: Perso
         <ul className="list">
           {presets.map((pr, i) => (
             <li key={pr.name}>
-              <span>{pr.name} <span className="muted small">· {names(pr.personIds)}</span></span>
+              <span>{pr.name} <span className="muted small">· {names(pr.personIds)}{pr.qr === false && ` · ${t('family.oneQrTag')}`}</span></span>
               <button type="button" className="btn" aria-label={`${t('family.presetDelete')} ${pr.name}`} disabled={busy}
                 onClick={() => save({ presets: presets.filter((_, j) => j !== i) })}>×</button>
             </li>

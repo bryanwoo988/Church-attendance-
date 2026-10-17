@@ -299,4 +299,7 @@ export const en: Record<MessageKey, string> = {
   "family.noQrTag": "No QR code",
   "family.noQrHint": "Babies or elders can go without a QR code; they are still counted when the family checks in.",
   "home.todaySet": "Set who is coming today",
+  "family.eachQr": "Each person shows their own QR code (untick: one family QR code on home)",
+  "family.oneQrTag": "One family QR",
+  "home.familyQr": "Family QR code: the scanner sees everyone on today's list",
 };

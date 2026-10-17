@@ -13,10 +13,13 @@ export default function HomePage() {
   const family = useHousehold(user?.householdId) ?? [];
   const [idx, setIdx] = useState(0);
   const household = useHouseholdDoc(family.length > 1 ? user?.householdId : undefined);
-  const withQr = family.filter((p) => !p.noQr && p.id !== person?.id);
-  const ordered = person ? [person, ...withQr] : withQr;
-  const todayIds = household?.today?.date === klDate(new Date()) ? household.today.personIds : [];
-  const todayNames = todayIds.map((id) => family.find((p) => p.id === id)?.name).filter(Boolean).join('、');
+  const todayList = household?.today?.date === klDate(new Date()) ? household.today : undefined;
+  const todayIds = (todayList?.personIds ?? []).filter((id) => family.some((p) => p.id === id));
+  const todayNames = todayIds.map((id) => family.find((p) => p.id === id)?.name).join('、');
+  // With today's list, only those members' codes; "one family QR" shows just mine (scanning any one brings up the list).
+  const familyQr = todayIds.length > 0 && todayList?.qr === false;
+  const withQr = family.filter((p) => !p.noQr && p.id !== person?.id && (todayIds.length === 0 || todayIds.includes(p.id)));
+  const ordered = person ? [person, ...(familyQr ? [] : withQr)] : withQr;
   const shown = ordered[Math.min(idx, ordered.length - 1)];
   const settings = useSettings();
   const has = (r: string) => roles.includes(r as never);
@@ -25,7 +28,7 @@ export default function HomePage() {
     <div>
       <p className="muted">{t('greeting', { name: person?.name ?? '' })}</p>
       <div className="card center">
-        {shown ? <QrCard personId={shown.id} name={shown.name} caption={t('home.qrHint')} /> : <p className="muted">{t('common.loading')}</p>}
+        {shown ? <QrCard personId={shown.id} name={shown.name} caption={t(familyQr ? 'home.familyQr' : 'home.qrHint')} /> : <p className="muted">{t('common.loading')}</p>}
         {ordered.length > 1 && (
           <div className="chips">
             {ordered.map((p, i) => (

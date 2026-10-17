@@ -298,5 +298,8 @@ export const zh = {
   "family.noQrTag": "不用 QR 码",
   "family.noQrHint": "婴儿或长辈可以不用 QR 码，全家签到时一样会算进去。",
   "home.todaySet": "设定今天谁来",
+  "family.eachQr": "每人显示自己的 QR 码（不勾：主页只显示一个家庭码）",
+  "family.oneQrTag": "一个家庭码",
+  "home.familyQr": "家庭 QR 码：签到员扫这个码，会带出今天名单上的所有人",
 };
 export type MessageKey = keyof typeof zh;
