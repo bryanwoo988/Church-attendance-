@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useHousehold } from '../api';
 import { useT } from '../i18n';
 import QrCard from './QrCard';
+import MyRoles from './MyRoles';
 
 export default function HomePage() {
   const { t } = useT();
@@ -33,6 +34,7 @@ export default function HomePage() {
         <Link className="btn" to="/family">{t('family.title')}</Link>
         <Link className="btn" to="/me">{t('mydata.title')}</Link>
       </div>
+      <MyRoles roles={roles} status={person?.status} />
       {(has('scanner') || has('leader') || has('admin') || has('finance')) && (
         <>
           <h2>{t('home.staff')}</h2>

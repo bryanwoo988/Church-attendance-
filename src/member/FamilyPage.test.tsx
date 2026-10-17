@@ -4,13 +4,14 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 
 const addFamilyMember = vi.fn().mockResolvedValue('newId');
+const updateFamilyMember = vi.fn().mockResolvedValue(undefined);
 vi.mock('../api', () => ({
   addFamilyMember: (...a: unknown[]) => addFamilyMember(...a),
   useHousehold: () => [
     { id: 'p1', name: 'Mary', kind: 'adult', householdId: 'h1', status: 'member', active: true, visitCount: 0, createdAt: new Date() },
     { id: 'p2', name: 'Kid', kind: 'child', householdId: 'h1', status: 'member', active: true, visitCount: 0, createdAt: new Date() },
   ],
-  updateFamilyMember: vi.fn(),
+  updateFamilyMember: (...a: unknown[]) => updateFamilyMember(...a),
 }));
 vi.mock('qrcode', () => ({ default: { toCanvas: vi.fn().mockResolvedValue(undefined) } }));
 
@@ -28,7 +29,7 @@ function renderPage() {
   );
 }
 
-beforeEach(() => { setLang('zh'); addFamilyMember.mockClear(); });
+beforeEach(() => { setLang('zh'); addFamilyMember.mockClear(); updateFamilyMember.mockReset().mockResolvedValue(undefined); });
 
 describe('FamilyPage', () => {
   it('lists family members', () => {
@@ -52,5 +53,40 @@ describe('FamilyPage', () => {
     await userEvent.click(screen.getByLabelText(t('family.child')));
     await userEvent.click(screen.getByRole('button', { name: t('family.add') }));
     expect(addFamilyMember).toHaveBeenCalledWith({ householdId: 'h1', name: 'Baby', kind: 'child', status: 'member' });
+  });
+
+  it('edits a family member name and adult/child', async () => {
+    renderPage();
+    await userEvent.click(screen.getByRole('button', { name: `${t('family.edit')} Kid` }));
+    const input = screen.getByLabelText(t('family.editName'));
+    await userEvent.clear(input);
+    await userEvent.type(input, 'Kid Tan');
+    await userEvent.click(screen.getByLabelText(t('family.adult'), { selector: '#edit-adult' }));
+    await userEvent.click(screen.getByRole('button', { name: t('family.save') }));
+    expect(updateFamilyMember).toHaveBeenCalledWith('p2', { name: 'Kid Tan', kind: 'adult' });
+  });
+
+  it('removes a family member after an in-app confirmation', async () => {
+    renderPage();
+    await userEvent.click(screen.getByRole('button', { name: `${t('family.edit')} Kid` }));
+    await userEvent.click(screen.getByRole('button', { name: t('family.remove') }));
+    expect(updateFamilyMember).not.toHaveBeenCalled();
+    expect(screen.getByText(t('family.removeConfirm', { name: 'Kid' }))).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: t('family.removeYes') }));
+    expect(updateFamilyMember).toHaveBeenCalledWith('p2', { active: false });
+  });
+
+  it('shows an error when saving fails', async () => {
+    updateFamilyMember.mockRejectedValue(new Error('denied'));
+    renderPage();
+    await userEvent.click(screen.getByRole('button', { name: `${t('family.edit')} Kid` }));
+    await userEvent.click(screen.getByRole('button', { name: t('family.save') }));
+    expect(await screen.findByText(t('common.error'))).toBeInTheDocument();
+  });
+
+  it('cannot remove yourself', async () => {
+    renderPage();
+    await userEvent.click(screen.getByRole('button', { name: `${t('family.edit')} Mary` }));
+    expect(screen.queryByRole('button', { name: t('family.remove') })).not.toBeInTheDocument();
   });
 });

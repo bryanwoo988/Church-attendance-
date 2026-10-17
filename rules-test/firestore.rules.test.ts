@@ -173,6 +173,14 @@ describe('people', () => {
   it('owner can rename own person', async () => {
     await assertSucceeds(updateDoc(doc(as('u_mem'), 'people/p_mem'), { name: 'New name' }));
   });
+  it('owner can change a family member to child and remove them', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'people/p_kid'), { name: 'Kid', householdId: 'h1', kind: 'adult', status: 'member', active: true, visitCount: 0 }));
+    await assertSucceeds(updateDoc(doc(as('u_mem'), 'people/p_kid'), { name: 'Kid Tan', kind: 'child' }));
+    await assertSucceeds(updateDoc(doc(as('u_mem'), 'people/p_kid'), { active: false }));
+  });
+  it('member cannot edit people of another household', async () => {
+    await assertFails(updateDoc(doc(as('u_mem'), 'people/p_other'), { kind: 'child' }));
+  });
   it('member cannot read people of another household', async () => {
     await assertFails(getDoc(doc(as('u_mem'), 'people/p_other')));
   });

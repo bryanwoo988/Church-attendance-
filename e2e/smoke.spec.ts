@@ -55,6 +55,22 @@ test('admin sets up, family checks in, finance exports, language switches', asyn
   await page.getByRole('button', { name: '加入家人' }).click();
   await expect(page.getByText('Little Tan')).toBeVisible();
 
+  // Member: add someone by mistake, then remove them in the app.
+  await expect(page.getByLabel('家人名字')).toHaveValue('');
+  await page.getByLabel('家人名字').fill('Oops');
+  await page.getByLabel('成人').check();
+  await page.getByRole('button', { name: '加入家人' }).click();
+  await page.getByRole('button', { name: '编辑 Oops' }).click();
+  await page.getByRole('button', { name: '移除', exact: true }).click();
+  await page.getByRole('button', { name: '确定移除' }).click();
+  await expect(page.getByText('Oops')).toHaveCount(0);
+
+  // Home shows my roles.
+  await page.goto('/');
+  await expect(page.getByText('我的身份')).toBeVisible();
+  await expect(page.locator('.chip', { hasText: '财务' })).toBeVisible();
+  await page.goto('/family');
+
   // Self check-in with the family picker.
   await page.goto('/checkin');
   await page.getByRole('button', { name: '确认签到（2 人）' }).click();
