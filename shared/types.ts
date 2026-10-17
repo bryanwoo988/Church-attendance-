@@ -18,16 +18,28 @@ export interface Person {
   lastVisitDate?: string;
   howHeard?: string;
   contactConsent?: boolean;
+  /** No personal QR code (e.g. a baby): still counted when the family checks in. */
+  noQr?: boolean;
   pdpaConsentAt?: Date;
   active: boolean;
   mergedInto?: string;
   createdAt: Date;
 }
 
+/** A saved group of family members, e.g. "Dad & Mum". */
+export interface FamilyPreset {
+  name: string;
+  personIds: string[];
+}
+
 export interface Household {
   id: string;
   ownerUid?: string;
-  createdAt: Date;
+  /** Saved combinations to pick from quickly. */
+  presets?: FamilyPreset[];
+  /** Who is coming on `date` (KL), chosen by the family ahead of time. */
+  today?: { date: string; personIds: string[] };
+  createdAt?: Date;
 }
 
 export interface UserDoc {

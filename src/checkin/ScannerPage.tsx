@@ -5,6 +5,7 @@ import { fetchPersonWithFamily, useGroups, useMeetingsOn } from '../api';
 import { useT, type MessageKey } from '../i18n';
 import { klDate, klTime } from '../../shared/dates';
 import { resolveCurrentMeeting } from '../../shared/checkin';
+import { todaysAttendees } from '../../shared/family';
 import type { Person } from '../../shared/types';
 import CameraScanner from './CameraScanner';
 import FamilyPicker from './FamilyPicker';
@@ -75,6 +76,9 @@ export default function ScannerPage() {
     }
     if (!found) return show({ kind: 'err', msg: 'scan.unknownPerson' });
     const { person, family } = found;
+    // The family already ticked who is coming today: check them all in from this one scan.
+    const listed = todaysAttendees(found.today, klDate(new Date()), family.map((p) => p.id), person.id);
+    if (listed) return record(listed, listed.map((id) => family.find((p) => p.id === id)!.name));
     if (family.length > 1) {
       setManual(false);
       setPicker([person, ...family.filter((p) => p.id !== person.id)]);

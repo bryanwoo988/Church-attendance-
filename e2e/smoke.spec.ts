@@ -53,7 +53,7 @@ test('admin sets up, family checks in, finance exports, language switches', asyn
   await page.getByLabel('家人名字').fill('Little Tan');
   await page.getByLabel('小孩').check();
   await page.getByRole('button', { name: '加入家人' }).click();
-  await expect(page.getByText('Little Tan')).toBeVisible();
+  await expect(page.getByRole('button', { name: '编辑 Little Tan' })).toBeVisible();
 
   // Member: add someone by mistake, then remove them in the app.
   await expect(page.getByLabel('家人名字')).toHaveValue('');
@@ -64,6 +64,11 @@ test('admin sets up, family checks in, finance exports, language switches', asyn
   await page.getByRole('button', { name: '移除', exact: true }).click();
   await page.getByRole('button', { name: '确定移除' }).click();
   await expect(page.getByText('Oops')).toHaveCount(0);
+
+  // Member: say who is coming today; home shows it.
+  await page.getByRole('group', { name: '今天谁来？' }).getByLabel('Little Tan').check();
+  await page.getByRole('button', { name: '保存今天的名单' }).click();
+  await expect(page.getByText('今天：Little Tan')).toBeVisible();
 
   // Home shows my roles.
   await page.goto('/');

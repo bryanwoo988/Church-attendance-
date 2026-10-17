@@ -26,6 +26,7 @@ vi.mock('../api', () => ({
 import { AuthContext } from '../auth/AuthProvider';
 import ScannerPage from './ScannerPage';
 import { t, setLang } from '../i18n';
+import { klDate } from '../../shared/dates';
 
 function renderPage() {
   return render(
@@ -112,5 +113,19 @@ describe('ScannerPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /Timothy/ }));
     expect(await screen.findByText(t('checkin.whoCame'))).toBeInTheDocument();
     expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+  });
+
+  it("checks in the family's list for today straight away, without the checklist", async () => {
+    fetchPersonWithFamily.mockResolvedValue({
+      person: P('k1', 'Timothy', 'child'),
+      family: [P('p1', 'Mary'), P('k1', 'Timothy', 'child'), P('b1', 'Baby', 'child')],
+      today: { date: klDate(new Date()), personIds: ['p1', 'b1'] },
+    });
+    recordScan.mockResolvedValue([{ personId: 'k1', status: 'ok' }, { personId: 'p1', status: 'ok' }, { personId: 'b1', status: 'ok' }]);
+    renderPage();
+    await act(async () => decode('cqr:p:k1'));
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(recordScan).toHaveBeenCalledWith('sunday-x', '2026-10-18', ['k1', 'p1', 'b1'], 'u_scan');
+    expect(await screen.findByText('Baby')).toBeInTheDocument();
   });
 });

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthProvider';
-import { useHousehold, useSettings } from '../api';
+import { useHousehold, useHouseholdDoc, useSettings } from '../api';
+import { klDate } from '../../shared/dates';
 import { useT } from '../i18n';
 import QrCard from './QrCard';
 import MyRoles from './MyRoles';
@@ -11,7 +12,11 @@ export default function HomePage() {
   const { user, person, roles, signOut } = useAuth();
   const family = useHousehold(user?.householdId) ?? [];
   const [idx, setIdx] = useState(0);
-  const ordered = person ? [person, ...family.filter((p) => p.id !== person.id)] : family;
+  const household = useHouseholdDoc(family.length > 1 ? user?.householdId : undefined);
+  const withQr = family.filter((p) => !p.noQr && p.id !== person?.id);
+  const ordered = person ? [person, ...withQr] : withQr;
+  const todayIds = household?.today?.date === klDate(new Date()) ? household.today.personIds : [];
+  const todayNames = todayIds.map((id) => family.find((p) => p.id === id)?.name).filter(Boolean).join('、');
   const shown = ordered[Math.min(idx, ordered.length - 1)];
   const settings = useSettings();
   const has = (r: string) => roles.includes(r as never);
@@ -28,7 +33,10 @@ export default function HomePage() {
             ))}
           </div>
         )}
-        {ordered.length > 1 && <p className="muted small">{t('home.familyHint')}</p>}
+        {family.length > 1 && <p className="muted small">{t('home.familyHint')}</p>}
+        {family.length > 1 && (todayNames
+          ? <p className="ok">{t('family.todaySaved', { names: todayNames })} <Link to="/family">{t('family.edit')}</Link></p>
+          : <Link className="btn block" to="/family" style={{ marginTop: 8 }}>{t('home.todaySet')}</Link>)}
       </div>
       <div className="grid2">
         <Link className="btn primary" to="/history">{t('history.title')}</Link>

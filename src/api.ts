@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { personFrom, meetingFrom, offeringFrom, attendanceFrom, groupFrom } from './data';
-import type { Attendance, ChurchSettings, Group, Meeting, Offering, Person, PersonKind, PersonStatus, Role } from '../shared/types';
+import type { Attendance, ChurchSettings, Group, Household, Meeting, Offering, Person, PersonKind, PersonStatus, Role } from '../shared/types';
 import { DEFAULT_SETTINGS } from '../shared/types';
 
 /** Live query helper. Returns undefined while loading. */
@@ -87,23 +87,43 @@ export function useSettings(): ChurchSettings | undefined {
   return s;
 }
 
-export async function addFamilyMember(p: { householdId: string; name: string; kind: PersonKind; status: PersonStatus }): Promise<string> {
+/** The household doc (saved combinations, today's list). Undefined while loading. */
+export function useHouseholdDoc(householdId: string | undefined): Household | undefined {
+  const [h, setH] = useState<Household>();
+  useEffect(() => {
+    if (!householdId) return;
+    return onSnapshot(
+      doc(db, 'households', householdId),
+      (snap) => setH({ id: snap.id, ...(snap.data() as Omit<Household, 'id'> | undefined) }),
+      () => setH({ id: householdId }),
+    );
+  }, [householdId]);
+  return h;
+}
+
+export async function saveHousehold(householdId: string, patch: Pick<Household, 'presets' | 'today'>) {
+  await updateDoc(doc(db, 'households', householdId), patch);
+}
+
+export async function addFamilyMember(p: { householdId: string; name: string; kind: PersonKind; status: PersonStatus; noQr?: boolean }): Promise<string> {
   const ref = await addDoc(collection(db, 'people'), { ...p, active: true, visitCount: 0, createdAt: serverTimestamp() });
   return ref.id;
 }
 
-export async function updateFamilyMember(id: string, patch: { name?: string; kind?: PersonKind; active?: boolean }) {
+export async function updateFamilyMember(id: string, patch: { name?: string; kind?: PersonKind; active?: boolean; noQr?: boolean }) {
   await updateDoc(doc(db, 'people', id), patch);
 }
 
-export async function fetchPersonWithFamily(personId: string): Promise<{ person: Person; family: Person[] } | null> {
+export async function fetchPersonWithFamily(personId: string): Promise<{ person: Person; family: Person[]; today?: Household['today'] } | null> {
   const { getDoc, getDocs } = await import('firebase/firestore');
   const snap = await getDoc(doc(db, 'people', personId));
   if (!snap.exists()) return null;
   const person = personFrom(snap);
   if (!person.active) return null;
   const fam = await getDocs(query(collection(db, 'people'), where('householdId', '==', person.householdId)));
-  return { person, family: fam.docs.map(personFrom).filter((p) => p.active) };
+  // Who the family said is coming today; optional, so a read failure just means "not set".
+  const h = await getDoc(doc(db, 'households', person.householdId)).catch(() => null);
+  return { person, family: fam.docs.map(personFrom).filter((p) => p.active), today: h?.get('today') };
 }
 
 export async function addOffering(o: { uid: string; personId: string; householdId: string; amountSen: number; category: string; date: string }): Promise<string> {

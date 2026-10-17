@@ -32,8 +32,20 @@ service cloud.firestore {
     }
 
     match /households/{hid} {
-      allow read: if signedIn() && (myHousehold() == hid || isAdmin());
-      allow create, update: if isAdmin();
+      // Door scanners and leaders read who a family said is coming today.
+      allow read: if signedIn() && (myHousehold() == hid || hasAnyRole(['scanner', 'leader', 'admin']));
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (
+        hasProfile() && myHousehold() == hid
+        && onlyChanged(['presets', 'today'])
+        && request.resource.data.get('presets', []) is list
+        && request.resource.data.get('presets', []).size() <= 10
+        && (!('today' in request.resource.data) || (
+          request.resource.data.today is map
+          && request.resource.data.today.date is string
+          && request.resource.data.today.personIds is list
+          && request.resource.data.today.personIds.size() <= 20))
+      );
     }
 
     match /people/{pid} {
@@ -44,7 +56,8 @@ service cloud.firestore {
       allow create: if isAdmin() || (
         hasProfile()
         && request.resource.data.householdId == myHousehold()
-        && request.resource.data.keys().hasOnly(['name', 'kind', 'householdId', 'status', 'active', 'visitCount', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['name', 'kind', 'householdId', 'status', 'active', 'visitCount', 'createdAt', 'noQr'])
+        && request.resource.data.get('noQr', false) is bool
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
         && request.resource.data.kind in ['adult', 'child']
         && request.resource.data.status == get(/databases/$(database)/documents/people/$(me().personId)).data.status
@@ -55,10 +68,11 @@ service cloud.firestore {
       allow update: if isAdmin() || (
         hasProfile()
         && resource.data.householdId == myHousehold()
-        && onlyChanged(['name', 'kind', 'active'])
+        && onlyChanged(['name', 'kind', 'active', 'noQr'])
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
         && request.resource.data.kind in ['adult', 'child']
         && request.resource.data.active is bool
+        && request.resource.data.get('noQr', false) is bool
       );
       allow delete: if isAdmin();
     }

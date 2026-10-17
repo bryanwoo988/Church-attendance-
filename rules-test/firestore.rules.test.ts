@@ -151,6 +151,26 @@ describe('attendance', () => {
   });
 });
 
+describe('households', () => {
+  const presets = [{ name: 'Dad & Mum', personIds: ['p_mem'] }];
+  it('a member can save combinations and today\'s list for their own household', async () => {
+    await assertSucceeds(updateDoc(doc(as('u_mem'), 'households/h1'), { presets, today: { date: '2026-10-18', personIds: ['p_mem'] } }));
+  });
+  it('a member cannot change the owner or another household', async () => {
+    await assertFails(updateDoc(doc(as('u_mem'), 'households/h1'), { ownerUid: 'u_mem2' }));
+    await assertFails(updateDoc(doc(as('u_mem'), 'households/h2'), { presets }));
+  });
+  it('rejects malformed or oversized lists', async () => {
+    await assertFails(updateDoc(doc(as('u_mem'), 'households/h1'), { presets: 'x' }));
+    await assertFails(updateDoc(doc(as('u_mem'), 'households/h1'), { presets: Array.from({ length: 11 }, () => presets[0]) }));
+    await assertFails(updateDoc(doc(as('u_mem'), 'households/h1'), { today: { date: '2026-10-18', personIds: 'p_mem' } }));
+  });
+  it('the door scanner can read who a family said is coming', async () => {
+    await assertSucceeds(getDoc(doc(as('u_scan'), 'households/h1')));
+    await assertFails(getDoc(doc(as('u_other'), 'households/h1')));
+  });
+});
+
 describe('people', () => {
   it('household owner adds a child', async () => {
     await assertSucceeds(addDoc(collection(as('u_mem'), 'people'), {
@@ -177,6 +197,15 @@ describe('people', () => {
     await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'people/p_kid'), { name: 'Kid', householdId: 'h1', kind: 'adult', status: 'member', active: true, visitCount: 0 }));
     await assertSucceeds(updateDoc(doc(as('u_mem'), 'people/p_kid'), { name: 'Kid Tan', kind: 'child' }));
     await assertSucceeds(updateDoc(doc(as('u_mem'), 'people/p_kid'), { active: false }));
+  });
+  it('owner can turn a family member\'s QR code off', async () => {
+    await assertSucceeds(updateDoc(doc(as('u_mem'), 'people/p_mem'), { noQr: true }));
+    await assertFails(updateDoc(doc(as('u_mem'), 'people/p_mem'), { noQr: 'yes' }));
+  });
+  it('owner can add a family member without a QR code', async () => {
+    await assertSucceeds(addDoc(collection(as('u_mem'), 'people'), {
+      name: 'Baby', kind: 'child', householdId: 'h1', status: 'member', active: true, visitCount: 0, noQr: true, createdAt: serverTimestamp(),
+    }));
   });
   it('member cannot edit people of another household', async () => {
     await assertFails(updateDoc(doc(as('u_mem'), 'people/p_other'), { kind: 'child' }));
