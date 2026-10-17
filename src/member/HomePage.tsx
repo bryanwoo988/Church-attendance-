@@ -28,6 +28,7 @@ export default function HomePage() {
             ))}
           </div>
         )}
+        {ordered.length > 1 && <p className="muted small">{t('home.familyHint')}</p>}
       </div>
       <div className="grid2">
         <Link className="btn primary" to="/history">{t('history.title')}</Link>

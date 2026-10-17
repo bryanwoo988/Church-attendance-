@@ -282,4 +282,5 @@ export const en: Record<MessageKey, string> = {
   "manual.contact": "They agree to be contacted by the church",
   "manual.pdpaTold": "I told them the data is only for attendance and pastoral follow-up (PDPA)",
   "manual.pdpaRequired": "With a phone number, tell them how it is used and tick the box",
+  "home.familyHint": "When the family comes together, the scanner only needs one QR code to check everyone in.",
 };

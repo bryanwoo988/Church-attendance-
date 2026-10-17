@@ -281,5 +281,6 @@ export const zh = {
   "manual.contact": "对方同意教会联络他",
   "manual.pdpaTold": "已告诉对方：资料只用于出席记录和联络关怀（PDPA）",
   "manual.pdpaRequired": "填了电话，就要先告诉对方资料用途并打勾",
+  "home.familyHint": "全家一起来时，只要给签到员扫其中一个 QR 码，签到员可以一次把全家签到。",
 };
 export type MessageKey = keyof typeof zh;

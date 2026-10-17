@@ -13,14 +13,14 @@ const recordScan = vi.fn();
 vi.mock('./offlineStatus', async (orig) => ({ ...(await orig<object>()), recordScan: (...a: unknown[]) => recordScan(...a) }));
 vi.mock('../firebase', () => ({ db: {} }));
 let meetings: unknown[] = [];
+const P = (id: string, name: string, kind: 'adult' | 'child' = 'adult', accountUid?: string) =>
+  ({ id, name, householdId: 'h1', kind, status: 'member', active: true, visitCount: 0, createdAt: new Date(), accountUid });
+const fetchPersonWithFamily = vi.fn();
 vi.mock('../api', () => ({
   useMeetingsOn: () => meetings,
-  usePeople: () => [],
+  usePeople: () => [P('p1', 'Mary'), P('k1', 'Timothy', 'child')],
   useGroups: () => [],
-  fetchPersonWithFamily: vi.fn().mockResolvedValue({
-    person: { id: 'p1', name: 'Mary', householdId: 'h1', kind: 'adult', status: 'member', active: true, visitCount: 0, createdAt: new Date() },
-    family: [{ id: 'p1', name: 'Mary', householdId: 'h1', kind: 'adult', status: 'member', active: true, visitCount: 0, createdAt: new Date() }],
-  }),
+  fetchPersonWithFamily: (...a: unknown[]) => fetchPersonWithFamily(...a),
 }));
 
 import { AuthContext } from '../auth/AuthProvider';
@@ -40,6 +40,7 @@ function renderPage() {
 beforeEach(() => {
   setLang('zh');
   recordScan.mockReset();
+  fetchPersonWithFamily.mockReset().mockResolvedValue({ person: P('p1', 'Mary'), family: [P('p1', 'Mary')] });
   meetings = [{ id: 'sunday-x', type: 'sunday', title: '主日', date: '2026-10-18', checkinMode: 'always' }];
 });
 
@@ -88,5 +89,28 @@ describe('ScannerPage', () => {
     renderPage();
     await act(async () => decode('cqr:p:p1'));
     expect(await screen.findByText(t('scan.already'))).toBeInTheDocument();
+  });
+
+  it("a child's QR brings up the whole family, scanned child first, all ticked", async () => {
+    fetchPersonWithFamily.mockResolvedValue({ person: P('k1', 'Timothy', 'child'), family: [P('p1', 'Mary', 'adult', 'u1'), P('k1', 'Timothy', 'child')] });
+    recordScan.mockResolvedValue([{ personId: 'k1', status: 'ok' }, { personId: 'p1', status: 'ok' }]);
+    renderPage();
+    await act(async () => decode('cqr:p:k1'));
+    const boxes = screen.getAllByRole('checkbox');
+    expect(boxes).toHaveLength(2);
+    expect(boxes.every((b) => (b as HTMLInputElement).checked)).toBe(true);
+    await act(async () => screen.getByRole('button', { name: t('checkin.confirm', { n: 2 }) }).click());
+    expect(recordScan).toHaveBeenCalledWith('sunday-x', '2026-10-18', ['k1', 'p1'], 'u_scan');
+  });
+
+  it('manual check-in of someone with family also offers the family', async () => {
+    fetchPersonWithFamily.mockResolvedValue({ person: P('k1', 'Timothy', 'child'), family: [P('p1', 'Mary'), P('k1', 'Timothy', 'child')] });
+    renderPage();
+    await act(async () => screen.getByRole('button', { name: t('scan.tabManual') }).click());
+    const { default: userEvent } = await import('@testing-library/user-event');
+    await userEvent.type(screen.getByLabelText(t('manual.search')), 'Tim');
+    await userEvent.click(screen.getByRole('button', { name: /Timothy/ }));
+    expect(await screen.findByText(t('checkin.whoCame'))).toBeInTheDocument();
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
   });
 });

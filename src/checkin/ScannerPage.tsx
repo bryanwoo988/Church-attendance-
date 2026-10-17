@@ -64,26 +64,31 @@ export default function ScannerPage() {
     }
   }
 
+  /** Look someone up and check them in; with family on the account, let the scanner tick who came (all ticked). */
+  async function checkInPerson(personId: string, fallbackName: string) {
+    let found: Awaited<ReturnType<typeof fetchPersonWithFamily>> = null;
+    try {
+      found = await fetchPersonWithFamily(personId);
+    } catch {
+      // offline and not cached: still record the scanned person
+      return record([personId], [fallbackName]);
+    }
+    if (!found) return show({ kind: 'err', msg: 'scan.unknownPerson' });
+    const { person, family } = found;
+    if (family.length > 1) {
+      setManual(false);
+      setPicker([person, ...family.filter((p) => p.id !== person.id)]);
+      return;
+    }
+    return record([person.id], [person.name]);
+  }
+
   async function onDecode(text: string) {
     if (busy || picker || manual) return;
     const g = gate.current(text, Date.now());
     if (g === 'ignore') return;
     if (g === 'notChurch') return show({ kind: 'err', msg: 'scan.notChurchQr' });
-    let found: Awaited<ReturnType<typeof fetchPersonWithFamily>> = null;
-    try {
-      found = await fetchPersonWithFamily(g.personId);
-    } catch {
-      // offline and not cached: still record the scanned person
-      return record([g.personId], [t('scan.unknownName')]);
-    }
-    if (!found) return show({ kind: 'err', msg: 'scan.unknownPerson' });
-    const { person, family } = found;
-    if (person.accountUid && family.length > 1) {
-      const ordered = [person, ...family.filter((p) => p.id !== person.id)];
-      setPicker(ordered);
-      return;
-    }
-    return record([person.id], [person.name]);
+    return checkInPerson(g.personId, t('scan.unknownName'));
   }
 
   if (meetings && allowed.length === 0) {
@@ -111,16 +116,6 @@ export default function ScannerPage() {
           <button className={'chip' + (manual ? ' on' : '')} onClick={() => { setPicker(null); setManual(true); }}>{t('scan.tabManual')}</button>
         </div>
       )}
-      {meeting && manual ? (
-        <ManualCheckin
-          meetingId={meeting.id}
-          onPick={(id, name) => record([id], [name])}
-          onAdded={(name, status) => { setManual(false); show({ ...statusMsg([{ personId: '', status }]), names: [name] }); }}
-          onClose={() => setManual(false)}
-        />
-      ) : (
-        <CameraScanner onDecode={onDecode} paused={!!picker} />
-      )}
       {feedback && (
         <div className={`card feedback ${feedback.kind}`} role="status">
           {feedback.names?.map((n) => <div key={n} className="qrname">{n}</div>)}
@@ -132,6 +127,16 @@ export default function ScannerPage() {
           <FamilyPicker people={picker} busy={busy} onConfirm={(ids) => record(ids, picker.filter((p) => ids.includes(p.id)).map((p) => p.name))} />
           <button className="btn block" style={{ marginTop: 8 }} onClick={() => setPicker(null)}>{t('common.cancel')}</button>
         </div>
+      )}
+      {meeting && manual ? (
+        <ManualCheckin
+          meetingId={meeting.id}
+          onPick={(id, name) => checkInPerson(id, name)}
+          onAdded={(name, status) => { setManual(false); show({ ...statusMsg([{ personId: '', status }]), names: [name] }); }}
+          onClose={() => setManual(false)}
+        />
+      ) : (
+        <CameraScanner onDecode={onDecode} paused={!!picker} />
       )}
     </div>
   );
