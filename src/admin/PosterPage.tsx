@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import QRCode from 'qrcode';
 import { useT, type MessageKey } from '../i18n';
+import { useSettings } from '../api';
 
 function Poster({ url, title, caption }: { url: string; title: MessageKey | string; caption: MessageKey }) {
   const { t } = useT();
@@ -24,6 +25,7 @@ export default function PosterPage() {
   const [params] = useSearchParams();
   const origin = window.location.origin;
   const m = params.get('m');
+  const selfOff = useSettings()?.selfCheckin === false;
   return (
     <div>
       <div className="noprint">
@@ -31,8 +33,11 @@ export default function PosterPage() {
         <p className="muted">{t('poster.hint')}</p>
         <button className="btn primary block" onClick={() => window.print()}>{t('poster.print')}</button>
         <p className="muted">{t('poster.phoneHint')}</p>
+        {selfOff && <p className="warn">{t('poster.selfOff')}</p>}
       </div>
-      {m ? (
+      {selfOff ? (
+        <Poster url={`${origin}/welcome`} title="poster.welcomeTitle" caption="poster.welcomeCaption" />
+      ) : m ? (
         <Poster url={`${origin}/checkin?m=${encodeURIComponent(m)}`} title="poster.meetingTitle" caption="poster.checkinCaption" />
       ) : (
         <>

@@ -77,6 +77,14 @@ export default function SettingsPage() {
         <input id="qr-file" type="file" accept="image/png,image/jpeg,image/webp" onChange={onFile} />
       </div>
       <div className="card">
+        <h2>{t('settings.selfTitle')}</h2>
+        <p className="muted">{t('settings.selfHint')}</p>
+        <label className="check">
+          <input type="checkbox" checked={!!settings?.selfCheckin} disabled={!settings} onChange={(e) => run(() => saveSettings({ selfCheckin: e.target.checked }))} />
+          {t('settings.selfOn')}
+        </label>
+      </div>
+      <div className="card">
         <h2>{t('settings.sundayTitle')}</h2>
         <label htmlFor="s-wd">{t('settings.weekday')}</label>
         <select id="s-wd" value={weekday} onChange={(e) => setWeekday(Number(e.target.value))}>

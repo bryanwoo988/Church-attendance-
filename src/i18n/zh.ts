@@ -256,5 +256,18 @@ export const zh = {
   "roleCan.leader": "开小组聚会、帮组员签到、管理组员、看小组出席率",
   "roleCan.finance": "查看全部奉献记录、修改奉献金额、导出 Excel",
   "roleCan.admin": "全部权限：会友管理、指派角色、新朋友、聚会、小组、海报、设定（收款 QR 码）",
+  "checkin.selfOff": "教会目前用签到员扫码签到。请到门口把你的 QR 码给签到员扫。",
+  "settings.selfTitle": "会友自助签到",
+  "settings.selfHint": "关闭（建议）：只能由签到员扫会友的 QR 码。打开：会友可以在 App 里按「签到」或扫门口海报自己签到。",
+  "settings.selfOn": "允许会友自助签到",
+  "manual.open": "手动签到（没有 QR 码）",
+  "manual.search": "输入名字或电话找人",
+  "manual.none": "找不到这个人",
+  "manual.newTitle": "新朋友：新增并签到",
+  "manual.phone": "电话（可不填）",
+  "manual.phoneHint": "填电话前，请先告诉对方教会会用这个号码联络跟进。",
+  "manual.add": "新增并签到",
+  "manual.close": "关闭",
+  "poster.selfOff": "自助签到已关闭，所以只需要打印「新朋友」海报。会友签到由签到员扫他们的 QR 码。",
 };
 export type MessageKey = keyof typeof zh;

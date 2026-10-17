@@ -10,6 +10,9 @@ vi.mock('./CameraScanner', () => ({
   },
 }));
 
+let settings: { selfCheckin?: boolean } = { selfCheckin: true };
+vi.mock('../api', () => ({ useSettings: () => settings }));
+
 import ScanPosterPage from './ScanPosterPage';
 import { t, setLang } from '../i18n';
 
@@ -29,7 +32,7 @@ function renderPage() {
   );
 }
 
-beforeEach(() => setLang('zh'));
+beforeEach(() => { setLang('zh'); settings = { selfCheckin: true }; });
 
 describe('ScanPosterPage', () => {
   it('opens check-in for the meeting on a scanned church poster', () => {
@@ -47,5 +50,11 @@ describe('ScanPosterPage', () => {
   it('offers checking in without scanning', () => {
     renderPage();
     expect(screen.getByRole('link', { name: t('posterScan.skip') })).toHaveAttribute('href', '/checkin');
+  });
+
+  it('tells members to use the door scanner when self check-in is off', () => {
+    settings = { selfCheckin: false };
+    renderPage();
+    expect(screen.getByText(t('checkin.selfOff'))).toBeInTheDocument();
   });
 });

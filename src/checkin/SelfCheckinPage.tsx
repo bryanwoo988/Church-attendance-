@@ -10,7 +10,7 @@ import { klTime } from '../../shared/dates';
 
 interface Res { meetingId: string; meetingTitle: string; results: { personId: string; status: 'ok' | 'already'; at?: string }[] }
 
-const KNOWN: MessageKey[] = ['checkin.closed', 'checkin.noMeeting', 'checkin.notYourFamily'];
+const KNOWN: MessageKey[] = ['checkin.selfOff', 'checkin.closed', 'checkin.noMeeting', 'checkin.notYourFamily'];
 
 export default function SelfCheckinPage() {
   const { t } = useT();

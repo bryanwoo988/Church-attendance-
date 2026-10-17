@@ -10,6 +10,8 @@ interface Res { meetingId: string; meetingTitle: string; results: { personId: st
 
 export const selfCheckIn = onCall<Req, Promise<Res>>({ region: REGION }, async (request) => {
   const user = await requireUser(request);
+  // Off unless an admin turns it on: by default only door scanners record attendance.
+  if ((await db.doc('settings/church').get()).get('selfCheckin') !== true) throw new HttpsError('failed-precondition', 'checkin.selfOff');
   const ids = Array.isArray(request.data?.personIds) ? [...new Set(request.data.personIds.filter((x) => typeof x === 'string'))] : [];
   if (ids.length === 0 || ids.length > 20) throw new HttpsError('invalid-argument', 'checkin.noPeople');
 

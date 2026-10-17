@@ -13,9 +13,19 @@ beforeEach(async () => {
   await db.doc('people/p_kid').set({ name: 'Kid', householdId: 'h1', kind: 'child', status: 'member', active: true, visitCount: 0 });
   await db.doc('people/p_other').set({ name: 'Other', householdId: 'h2', kind: 'adult', status: 'member', active: true, visitCount: 0 });
   await db.doc(`meetings/sunday-${today}`).set({ type: 'sunday', title: '主日', date: today, checkinMode: 'always' });
+  await db.doc('settings/church').set({ selfCheckin: true });
 });
 
 describe('selfCheckIn', () => {
+  it('is refused while the church uses scanner-only check-in', async () => {
+    await db.doc('settings/church').set({ selfCheckin: false });
+    const r = await callFn('selfCheckIn', { personIds: ['p_mem'] }, MEM);
+    expect(r).toMatchObject({ ok: false, message: 'checkin.selfOff' });
+    await db.doc('settings/church').delete();
+    expect(await callFn('selfCheckIn', { personIds: ['p_mem'] }, MEM)).toMatchObject({ ok: false, message: 'checkin.selfOff' });
+    expect((await db.collection('attendance').get()).size).toBe(0);
+  });
+
   it('checks in self and child', async () => {
     const r = await callFn<any>('selfCheckIn', { personIds: ['p_mem', 'p_kid'] }, MEM);
     if (!r.ok) throw new Error(r.message);

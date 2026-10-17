@@ -83,9 +83,12 @@ export interface ChurchSettings {
   paymentQrDataUrl?: string;
   sunday: { weekday: number; start: string; end: string; checkinMode: CheckinMode };
   offeringCategories: string[];
+  /** Members may check themselves in (app button / door poster). Off: door scanners only. */
+  selfCheckin?: boolean;
 }
 
 export const DEFAULT_SETTINGS: ChurchSettings = {
   sunday: { weekday: 0, start: '09:00', end: '11:30', checkinMode: 'window' },
   offeringCategories: ['一般奉献 General'],
+  selfCheckin: false,
 };

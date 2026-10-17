@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useT } from '../i18n';
+import { useSettings } from '../api';
 import { parsePosterUrl } from '../../shared/poster';
 import CameraScanner from './CameraScanner';
 
@@ -13,11 +14,21 @@ export default function ScanPosterPage() {
   const { t } = useT();
   const nav = useNavigate();
   const [bad, setBad] = useState(false);
+  const settings = useSettings();
 
   function onDecode(text: string) {
     const route = parsePosterUrl(text, ORIGINS);
     if (route) nav(route, { replace: true });
     else setBad(true);
+  }
+
+  if (settings && !settings.selfCheckin) {
+    return (
+      <div className="card center">
+        <p>{t('checkin.selfOff')}</p>
+        <Link className="btn block" to="/">{t('common.back')}</Link>
+      </div>
+    );
   }
 
   return (

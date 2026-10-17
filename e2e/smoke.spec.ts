@@ -32,7 +32,7 @@ async function login(page: Page, local: string, e164: string, name: string) {
   await expect(page.getByLabel('名字')).toBeVisible({ timeout: 15_000 }); // first callable can be a cold start
   await page.getByLabel('名字').fill(name);
   await page.getByRole('button', { name: '继续' }).click();
-  await expect(page.getByRole('link', { name: '签到', exact: true })).toBeVisible();
+  await expect(page.getByText('我的身份')).toBeVisible();
 }
 
 test('admin sets up, family checks in, finance exports, language switches', async ({ page }) => {
@@ -70,6 +70,22 @@ test('admin sets up, family checks in, finance exports, language switches', asyn
   await expect(page.getByText('我的身份')).toBeVisible();
   await expect(page.locator('.chip', { hasText: '财务' })).toBeVisible();
   await page.goto('/family');
+
+  // Self check-in is off by default: no 签到 button on home, and /checkin refuses.
+  await page.goto('/');
+  await expect(page.getByRole('link', { name: '签到', exact: true })).toHaveCount(0);
+
+  // Door scanner: manual check-in of a newcomer with no QR code.
+  await page.goto('/scan');
+  await page.getByRole('button', { name: '手动签到（没有 QR 码）' }).click();
+  await page.getByLabel('输入名字或电话找人').fill('Ah Kow');
+  await page.getByRole('button', { name: '新增并签到' }).click();
+  await expect(page.getByText('✓ 已签到')).toBeVisible();
+
+  // Admin turns self check-in on.
+  await page.goto('/admin/settings');
+  await page.getByLabel('允许会友自助签到').check();
+  await expect(page.getByText('已保存')).toBeVisible();
 
   // Self check-in with the family picker.
   await page.goto('/checkin');

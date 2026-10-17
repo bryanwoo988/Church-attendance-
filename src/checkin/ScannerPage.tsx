@@ -7,6 +7,7 @@ import { resolveCurrentMeeting } from '../../shared/checkin';
 import type { Person } from '../../shared/types';
 import CameraScanner from './CameraScanner';
 import FamilyPicker from './FamilyPicker';
+import ManualCheckin from './ManualCheckin';
 import { makeScanGate, recordScan, type ScanResult } from './offlineStatus';
 
 type Feedback = { kind: 'ok' | 'warn' | 'err'; msg: MessageKey; names?: string[]; time?: string };
@@ -38,6 +39,7 @@ export default function ScannerPage() {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [picker, setPicker] = useState<Person[] | null>(null);
   const [busy, setBusy] = useState(false);
+  const [manual, setManual] = useState(false);
   const clearTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   function show(f: Feedback) {
@@ -57,11 +59,12 @@ export default function ScannerPage() {
     } finally {
       setBusy(false);
       setPicker(null);
+      setManual(false);
     }
   }
 
   async function onDecode(text: string) {
-    if (busy || picker) return;
+    if (busy || picker || manual) return;
     const g = gate.current(text, Date.now());
     if (g === 'ignore') return;
     if (g === 'notChurch') return show({ kind: 'err', msg: 'scan.notChurchQr' });
@@ -93,13 +96,23 @@ export default function ScannerPage() {
         </select>
       )}
       {meeting && <p className="muted">{t('scan.recordingFor', { title: meeting.title })}</p>}
-      <CameraScanner onDecode={onDecode} paused={!!picker} />
+      <CameraScanner onDecode={onDecode} paused={!!picker || manual} />
       {feedback && (
         <div className={`card feedback ${feedback.kind}`} role="status">
           {feedback.names?.map((n) => <div key={n} className="qrname">{n}</div>)}
           <div className={feedback.kind}>{t(feedback.msg, { time: feedback.time ?? '' })}</div>
         </div>
       )}
+      {meeting && (manual ? (
+        <ManualCheckin
+          meetingId={meeting.id}
+          onPick={(id, name) => record([id], [name])}
+          onAdded={(name, status) => { setManual(false); show({ ...statusMsg([{ personId: '', status }]), names: [name] }); }}
+          onClose={() => setManual(false)}
+        />
+      ) : !picker && (
+        <button className="btn block" style={{ marginTop: 12 }} onClick={() => setManual(true)}>{t('manual.open')}</button>
+      ))}
       {picker && (
         <div className="card">
           <FamilyPicker people={picker} busy={busy} onConfirm={(ids) => record(ids, picker.filter((p) => ids.includes(p.id)).map((p) => p.name))} />
