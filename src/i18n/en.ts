@@ -302,4 +302,9 @@ export const en: Record<MessageKey, string> = {
   "family.eachQr": "Each person shows their own QR code (untick: one family QR code on home)",
   "family.oneQrTag": "One family QR",
   "home.familyQr": "Family QR code: the scanner sees everyone on today's list",
+  "login.blocked": "This number can't receive codes right now (blocked by fraud protection). Please contact a church admin.",
+  "login.sendFailed": "Couldn't send the code. Please try again later.",
+  "settings.otpTitle": "Verification texts",
+  "settings.otpLimit": "Max codes per phone number per day",
+  "settings.otpHint": "Guards against someone repeatedly requesting codes; every code sent costs money.",
 };

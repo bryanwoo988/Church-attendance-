@@ -35,4 +35,13 @@ describe('SettingsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: t('settings.saveSunday') }));
     expect(saveSettings).toHaveBeenCalledWith({ sunday: { weekday: 0, start: '10:00', end: '11:30', checkinMode: 'window' } });
   });
+
+  it('saves the daily verification-code limit per number', async () => {
+    render(<SettingsPage />);
+    const input = screen.getByLabelText(t('settings.otpLimit'));
+    expect(input).toHaveValue(30);
+    fireEvent.change(input, { target: { value: '10' } });
+    fireEvent.click(document.getElementById('otp-save')!);
+    expect(saveSettings).toHaveBeenCalledWith({ otpPerPhonePerDay: 10 });
+  });
 });

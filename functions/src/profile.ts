@@ -1,4 +1,5 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { getAuth } from 'firebase-admin/auth';
 import { db, FieldValue, REGION } from './lib/admin';
 import { requireAuth } from './lib/auth';
 import { normalizeMyPhone } from '../../shared/phone';
@@ -13,7 +14,9 @@ export const ensureProfile = onCall<Req, Promise<Res>>({ region: REGION }, async
     const d = existing.data()!;
     return { personId: d.personId, householdId: d.householdId, needsName: false };
   }
-  const phoneRaw = request.auth?.token.phone_number;
+  // Firebase phone sign-in puts the number in the token; our Twilio sign-in (custom token) leaves it on
+  // the account record, which only the server sets after verifying the code.
+  const phoneRaw = request.auth?.token.phone_number ?? (await getAuth().getUser(uid).catch(() => null))?.phoneNumber;
   const phone = phoneRaw ? normalizeMyPhone(phoneRaw) : null;
   if (!phone?.ok) throw new HttpsError('failed-precondition', 'profile.noPhone');
 

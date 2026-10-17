@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
-import { auth } from '../firebase';
+import { signInWithCustomToken } from 'firebase/auth';
+import { auth, call } from '../firebase';
 import { useT, type MessageKey } from '../i18n';
 import { normalizeMyPhone } from '../../shared/phone';
 import { authErrorKey, detailFor } from './authErrors';
@@ -17,17 +17,15 @@ export default function LoginPage() {
   const [error, setError] = useState<MessageKey | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
+  // The number the code was sent to (E.164); null until a code is sent.
+  const [sentTo, setSentTo] = useState<string | null>(null);
   const [wait, setWait] = useState(0);
-  const verifier = useRef<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
     if (wait <= 0) return;
     const id = setTimeout(() => setWait((w) => w - 1), 1000);
     return () => clearTimeout(id);
   }, [wait]);
-
-  useEffect(() => () => verifier.current?.clear(), []);
 
   async function sendCode(e?: FormEvent) {
     e?.preventDefault();
@@ -40,15 +38,13 @@ export default function LoginPage() {
     }
     setBusy(true);
     try {
-      verifier.current ??= new RecaptchaVerifier(auth, 'recaptcha', { size: 'invisible' });
-      const c = await signInWithPhoneNumber(auth, p.e164, verifier.current);
-      setConfirmation(c);
+      // The server texts the code (Twilio Verify) and applies the daily per-number limit.
+      await call('requestLoginCode', { phone: p.e164 });
+      setSentTo(p.e164);
       setWait(RESEND_SECONDS);
     } catch (err) {
       setError(authErrorKey(err));
       setDetail(detailFor(authErrorKey(err), err));
-      verifier.current?.clear();
-      verifier.current = null;
     } finally {
       setBusy(false);
     }
@@ -56,12 +52,13 @@ export default function LoginPage() {
 
   async function verify(e: FormEvent) {
     e.preventDefault();
-    if (!confirmation) return;
+    if (!sentTo) return;
     setError(null);
     setDetail(null);
     setBusy(true);
     try {
-      await confirmation.confirm(code.trim());
+      const { token } = await call<object, { token: string }>('verifyLoginCode', { phone: sentTo, code: code.trim() });
+      await signInWithCustomToken(auth, token);
       const next = params.get('next');
       nav(next && next.startsWith('/') && !next.startsWith('//') ? next : '/', { replace: true });
     } catch (err) {
@@ -74,7 +71,7 @@ export default function LoginPage() {
   return (
     <div className="card">
       <h1>{t('login.title')}</h1>
-      {!confirmation ? (
+      {!sentTo ? (
         <form onSubmit={sendCode}>
           <label htmlFor="phone">{t('login.phone')}</label>
           <input id="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="012-345 6789" value={phone} onChange={(e) => setPhone(e.target.value)} />
@@ -92,12 +89,11 @@ export default function LoginPage() {
           <button type="button" className="btn block" style={{ marginTop: 8 }} disabled={busy || wait > 0} onClick={() => sendCode()}>
             {wait > 0 ? t('login.resendIn', { s: wait }) : t('login.resend')}
           </button>
-          <button type="button" className="btn block" style={{ marginTop: 8 }} onClick={() => { setConfirmation(null); setCode(''); }}>
+          <button type="button" className="btn block" style={{ marginTop: 8 }} onClick={() => { setSentTo(null); setCode(''); }}>
             {t('login.changePhone')}
           </button>
         </form>
       )}
-      <div id="recaptcha" />
     </div>
   );
 }

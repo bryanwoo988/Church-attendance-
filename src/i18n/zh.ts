@@ -301,5 +301,10 @@ export const zh = {
   "family.eachQr": "每人显示自己的 QR 码（不勾：主页只显示一个家庭码）",
   "family.oneQrTag": "一个家庭码",
   "home.familyQr": "家庭 QR 码：签到员扫这个码，会带出今天名单上的所有人",
+  "login.blocked": "这个号码暂时无法接收验证码（被防诈骗系统挡下）。请联络教会管理员。",
+  "login.sendFailed": "验证码发送失败，请稍后再试。",
+  "settings.otpTitle": "验证码短信",
+  "settings.otpLimit": "每个号码每天最多可以要几次验证码",
+  "settings.otpHint": "防止有人恶意刷短信、花掉教会的钱。每发一次验证码都要付费。",
 };
 export type MessageKey = keyof typeof zh;

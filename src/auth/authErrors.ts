@@ -1,18 +1,19 @@
 import type { MessageKey } from '../i18n';
+import { errorKey } from '../data';
+
+const KNOWN: MessageKey[] = [
+  'login.invalidPhone', 'login.wrongCode', 'login.codeExpired', 'login.tooMany', 'login.blocked', 'login.sendFailed',
+  'phone.same', 'phone.inUse',
+];
 
 export function errorCode(e: unknown): string {
   return String((e as { code?: string })?.code ?? '');
 }
 
+/** Message for a failed code request/check; the server names the reason (e.g. 'login.wrongCode'). */
 export function authErrorKey(e: unknown): MessageKey {
-  const code = errorCode(e);
-  if (code === 'auth/invalid-verification-code') return 'login.wrongCode';
-  if (code === 'auth/code-expired') return 'login.codeExpired';
-  if (code === 'auth/too-many-requests') return 'login.tooMany';
-  if (code === 'auth/invalid-phone-number') return 'login.invalidPhone';
-  if (code === 'auth/credential-already-in-use' || code === 'auth/account-exists-with-different-credential') return 'phone.inUse';
-  if (code === 'auth/requires-recent-login') return 'phone.reLogin';
-  return 'common.error';
+  const k = errorKey(e) as MessageKey | null;
+  return k && KNOWN.includes(k) ? k : 'common.error';
 }
 
 /** Code to show next to a generic message so problems can be diagnosed from a screenshot. */
