@@ -7,7 +7,7 @@ import { normalizeMyPhone } from '../../shared/phone';
 /**
  * After the app has verified a new number with SMS (Firebase updatePhoneNumber), copy it onto the
  * caller's person record. An earlier newcomer record with that number is the same human, so it is
- * merged in; a number owned by another account is refused.
+ * merged in; a number owned by another account is refused. Callable by any signed-in user.
  */
 export const syncMyPhone = onCall({ region: REGION }, async (request) => {
   const user = await requireUser(request);
