@@ -1,25 +1,23 @@
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { db, REGION } from './lib/admin';
-import { requireUser } from './lib/auth';
+import { HttpsError } from 'firebase-functions/v2/https';
+import { db } from './lib/admin';
 import { mergeInto } from './admin';
-import { normalizeMyPhone } from '../../shared/phone';
+import type { UserDoc } from '../../shared/types';
 
-/**
- * After the app has verified a new number with SMS (Firebase updatePhoneNumber), copy it onto the
- * caller's person record. An earlier newcomer record with that number is the same human, so it is
- * merged in; a number owned by another account is refused. Callable by any signed-in user.
- */
-export const syncMyPhone = onCall({ region: REGION, invoker: 'public' }, async (request) => {
-  const user = await requireUser(request);
-  const raw = request.auth?.token.phone_number;
-  const phone = raw ? normalizeMyPhone(raw) : null;
-  if (!phone?.ok) throw new HttpsError('failed-precondition', 'phone.noPhone');
-
-  const same = await db.collection('people').where('phone', '==', phone.e164).get();
+/** People (other than me) already holding this number; refuse if one of them is another account. */
+export async function phoneClaims(user: UserDoc, e164: string) {
+  const same = await db.collection('people').where('phone', '==', e164).get();
   const others = same.docs.filter((d) => d.id !== user.personId && d.get('active') !== false);
   if (others.some((d) => d.get('accountUid'))) throw new HttpsError('failed-precondition', 'phone.inUse');
+  return others;
+}
 
+/**
+ * Put a verified number on the caller's person record. An earlier newcomer record with that number
+ * is the same human, so it is merged in.
+ */
+export async function applyMyPhone(user: UserDoc, e164: string): Promise<number> {
+  const others = await phoneClaims(user, e164);
   for (const o of others) await mergeInto(o.id, user.personId);
-  await db.doc(`people/${user.personId}`).update({ phone: phone.e164 });
-  return { phone: phone.e164, merged: others.length };
-});
+  await db.doc(`people/${user.personId}`).update({ phone: e164 });
+  return others.length;
+}

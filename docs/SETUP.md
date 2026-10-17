@@ -42,6 +42,18 @@
 2. Firebase 控制台 → **App Check** → 选你的 Web App → **reCAPTCHA Enterprise** → 贴上金钥 ID → 储存。
 3. App Check → **API** → Cloud Functions 先保持「未强制」也可以（我们的函数自己会检查）。
 
+## 5b. 验证码短信（Twilio Verify）
+
+登录和换号码的验证码由 Twilio Verify 发送（Firebase 自带的短信对部分马来西亚号码会出现 -39 错误）。
+
+1. Twilio 后台 → Verify → Services → 建立服务（名称例如 `Church Checkin`，只开 SMS，Fraud Guard 用 Standard，Geo permissions 允许 Malaysia）。把 Service SID（`VA…`）填进 `functions/.env` 的 `TWILIO_VERIFY_SERVICE_SID`。
+2. Twilio 后台 → API keys & tokens → 建立 **Standard** API Key，记下 SID（`SK…`）和 Secret（只显示一次）。
+3. Google Cloud Console → Secret Manager → 启用 → 建立两个密钥：`TWILIO_API_KEY_SID`、`TWILIO_API_KEY_SECRET`。
+4. Google Cloud Console → IAM：
+   - `项目编号-compute@developer.gserviceaccount.com` 加角色 **Service Account Token Creator**（让服务器签发登录凭证）。
+   - 自动部署用的服务账号加角色 **Secret Manager Admin**（部署时让函数能读取上面两个密钥）。
+5. 每个号码每天最多能要几次验证码，在 App 的「设定 → 验证码短信」调整（默认 30）。
+
 ## 6. 取得网页设定
 
 1. Firebase 控制台 → 项目设定 → **你的应用程式** → 按 **</>**（网页）→ 名字随意 → 注册。

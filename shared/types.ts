@@ -99,10 +99,13 @@ export interface ChurchSettings {
   offeringCategories: string[];
   /** Members may check themselves in (app button / door poster). Off: door scanners only. */
   selfCheckin?: boolean;
+  /** Max login/change-phone codes one number can request per day (SMS cost guard). */
+  otpPerPhonePerDay?: number;
 }
 
 export const DEFAULT_SETTINGS: ChurchSettings = {
   sunday: { weekday: 0, start: '09:00', end: '11:30', checkinMode: 'window' },
   offeringCategories: ['一般奉献 General'],
   selfCheckin: false,
+  otpPerPhonePerDay: 30,
 };

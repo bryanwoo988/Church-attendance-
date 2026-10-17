@@ -15,12 +15,8 @@ async function grantRoles(phone: string, roles: string[]) {
   if (!res.ok) throw new Error(await res.text());
 }
 
-async function latestCode(phone: string): Promise<string> {
-  const res = await fetch(`http://127.0.0.1:9099/emulator/v1/projects/${PROJECT}/verificationCodes`);
-  const body = (await res.json()) as { verificationCodes: { phoneNumber: string; code: string }[] };
-  const codes = body.verificationCodes.filter((c) => c.phoneNumber === phone);
-  return codes[codes.length - 1].code;
-}
+// The emulator fakes the SMS provider: every code is this.
+const FAKE_CODE = '123456';
 
 async function login(page: Page, local: string, e164: string, name: string) {
   await page.goto('/login');
@@ -28,7 +24,7 @@ async function login(page: Page, local: string, e164: string, name: string) {
   await page.getByLabel('电话号码').fill(local);
   await page.getByRole('button', { name: '发送验证码' }).click();
   await expect(page.getByLabel('验证码')).toBeVisible();
-  await page.getByLabel('验证码').fill(await latestCode(e164));
+  await page.getByLabel('验证码').fill(FAKE_CODE);
   await page.getByRole('button', { name: '登录' }).click();
   await expect(page.getByLabel('名字')).toBeVisible({ timeout: 15_000 }); // first callable can be a cold start
   await page.getByLabel('名字').fill(name);

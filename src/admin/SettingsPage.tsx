@@ -1,7 +1,7 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
 import { saveSettings, useSettings } from '../api';
 import { useT, type MessageKey } from '../i18n';
-import type { CheckinMode } from '../../shared/types';
+import { DEFAULT_SETTINGS, type CheckinMode } from '../../shared/types';
 
 const MAX_RAW = 5 * 1024 * 1024;
 const MAX_DATA_URL = 900_000;
@@ -31,6 +31,7 @@ export default function SettingsPage() {
   const [mode, setMode] = useState<CheckinMode>('window');
   const [cats, setCats] = useState('');
   const [selfCheckin, setSelfCheckin] = useState(false);
+  const [otpLimit, setOtpLimit] = useState(String(DEFAULT_SETTINGS.otpPerPhonePerDay));
 
   useEffect(() => {
     if (!settings) return;
@@ -40,6 +41,7 @@ export default function SettingsPage() {
     setMode(settings.sunday.checkinMode);
     setCats(settings.offeringCategories.join('\n'));
     setSelfCheckin(!!settings.selfCheckin);
+    setOtpLimit(String(settings.otpPerPhonePerDay ?? DEFAULT_SETTINGS.otpPerPhonePerDay));
   }, [settings]);
 
   async function run(fn: () => Promise<void>) {
@@ -109,6 +111,16 @@ export default function SettingsPage() {
         <label className="check"><input type="radio" name="smode" checked={mode === 'always'} onChange={() => setMode('always')} />{t('meeting.modeAlways')}</label>
         <button className="btn primary block" style={{ marginTop: 10 }} onClick={() => run(() => saveSettings({ sunday: { weekday, start, end, checkinMode: mode } }))}>
           {t('settings.saveSunday')}
+        </button>
+      </div>
+      <div className="card">
+        <h2>{t('settings.otpTitle')}</h2>
+        <p className="muted">{t('settings.otpHint')}</p>
+        <label htmlFor="otp-limit">{t('settings.otpLimit')}</label>
+        <input id="otp-limit" type="number" min={1} max={100} value={otpLimit} onChange={(e) => setOtpLimit(e.target.value)} />
+        <button id="otp-save" className="btn primary block" style={{ marginTop: 10 }}
+          onClick={() => run(() => saveSettings({ otpPerPhonePerDay: Math.min(100, Math.max(1, Math.round(Number(otpLimit)) || 30)) }))}>
+          {t('common.save')}
         </button>
       </div>
       <div className="card">
