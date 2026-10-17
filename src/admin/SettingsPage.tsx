@@ -30,6 +30,7 @@ export default function SettingsPage() {
   const [end, setEnd] = useState('11:30');
   const [mode, setMode] = useState<CheckinMode>('window');
   const [cats, setCats] = useState('');
+  const [selfCheckin, setSelfCheckin] = useState(false);
 
   useEffect(() => {
     if (!settings) return;
@@ -38,6 +39,7 @@ export default function SettingsPage() {
     setEnd(settings.sunday.end);
     setMode(settings.sunday.checkinMode);
     setCats(settings.offeringCategories.join('\n'));
+    setSelfCheckin(!!settings.selfCheckin);
   }, [settings]);
 
   async function run(fn: () => Promise<void>) {
@@ -80,7 +82,16 @@ export default function SettingsPage() {
         <h2>{t('settings.selfTitle')}</h2>
         <p className="muted">{t('settings.selfHint')}</p>
         <label className="check">
-          <input type="checkbox" checked={!!settings?.selfCheckin} disabled={!settings} onChange={(e) => run(() => saveSettings({ selfCheckin: e.target.checked }))} />
+          <input
+            type="checkbox"
+            checked={selfCheckin}
+            disabled={!settings}
+            onChange={(e) => {
+              const on = e.target.checked;
+              setSelfCheckin(on);
+              run(() => saveSettings({ selfCheckin: on }));
+            }}
+          />
           {t('settings.selfOn')}
         </label>
       </div>
