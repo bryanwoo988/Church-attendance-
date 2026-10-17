@@ -220,4 +220,13 @@ export const en: Record<MessageKey, string> = {
   "groupAtt.noMembers": "This group has no members yet",
   "groupAtt.noMeetings": "No group meetings in this period",
   "home.groupAtt": "Group attendance",
+  "phone.title": "Change phone number",
+  "phone.hint": "Your account, attendance and offering records are kept. Log in with the new number afterwards.",
+  "phone.new": "New phone number",
+  "phone.confirm": "Confirm change",
+  "phone.same": "This is already your number",
+  "phone.inUse": "This number is already used by another account. Please contact an admin.",
+  "phone.reLogin": "For security, please log out and in again, then try again.",
+  "phone.done": "Changed to {phone}. Use this number to log in next time.",
+  "poster.phoneHint": "On a phone the print button may not respond: use the browser's Share → Print, or print this page from a computer.",
 };

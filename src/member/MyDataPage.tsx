@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useHousehold, useHouseholdAttendance } from '../api';
 import { call } from '../firebase';
 import { useT } from '../i18n';
+import ChangePhone from './ChangePhone';
 
 export default function MyDataPage() {
   const { t } = useT();
@@ -56,6 +57,11 @@ export default function MyDataPage() {
           </tbody></table>
         </div>
       ))}
+      <div className="card">
+        <h2>{t('phone.title')}</h2>
+        <p className="muted">{t('phone.hint')}</p>
+        <ChangePhone current={family.find((p) => p.id === user?.personId)?.phone} />
+      </div>
       <div className="card">
         <h2 className="err">{t('mydata.deleteTitle')}</h2>
         <p>{t('mydata.deleteHint')}</p>

@@ -219,5 +219,14 @@ export const zh = {
   "groupAtt.noMembers": "这个小组还没有组员",
   "groupAtt.noMeetings": "这段时间没有小组聚会",
   "home.groupAtt": "小组出席",
+  "phone.title": "更换电话号码",
+  "phone.hint": "换号码后，账号、出席和奉献记录都会保留。以后用新号码登录。",
+  "phone.new": "新的电话号码",
+  "phone.confirm": "确认更换",
+  "phone.same": "这就是你现在的号码",
+  "phone.inUse": "这个号码已经被另一个账号使用。请联络管理员。",
+  "phone.reLogin": "为了安全，请先登出再登录一次，然后再更换号码。",
+  "phone.done": "已更换为 {phone}，下次请用这个号码登录。",
+  "poster.phoneHint": "用手机的话，打印按钮可能没反应：请按浏览器的「分享 → 打印」，或在电脑上打开这一页打印。",
 };
 export type MessageKey = keyof typeof zh;

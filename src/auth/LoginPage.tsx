@@ -4,17 +4,9 @@ import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } fro
 import { auth } from '../firebase';
 import { useT, type MessageKey } from '../i18n';
 import { normalizeMyPhone } from '../../shared/phone';
+import { authErrorKey, detailFor } from './authErrors';
 
 const RESEND_SECONDS = 60;
-
-function authErrorKey(e: unknown): MessageKey {
-  const code = (e as { code?: string })?.code ?? '';
-  if (code === 'auth/invalid-verification-code') return 'login.wrongCode';
-  if (code === 'auth/code-expired') return 'login.codeExpired';
-  if (code === 'auth/too-many-requests') return 'login.tooMany';
-  if (code === 'auth/invalid-phone-number') return 'login.invalidPhone';
-  return 'common.error';
-}
 
 export default function LoginPage() {
   const { t } = useT();
@@ -23,6 +15,7 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState<MessageKey | null>(null);
+  const [detail, setDetail] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
   const [wait, setWait] = useState(0);
@@ -39,6 +32,7 @@ export default function LoginPage() {
   async function sendCode(e?: FormEvent) {
     e?.preventDefault();
     setError(null);
+    setDetail(null);
     const p = normalizeMyPhone(phone);
     if (!p.ok) {
       setError('login.invalidPhone');
@@ -52,6 +46,7 @@ export default function LoginPage() {
       setWait(RESEND_SECONDS);
     } catch (err) {
       setError(authErrorKey(err));
+      setDetail(detailFor(authErrorKey(err), err));
       verifier.current?.clear();
       verifier.current = null;
     } finally {
@@ -63,6 +58,7 @@ export default function LoginPage() {
     e.preventDefault();
     if (!confirmation) return;
     setError(null);
+    setDetail(null);
     setBusy(true);
     try {
       await confirmation.confirm(code.trim());
@@ -70,6 +66,7 @@ export default function LoginPage() {
       nav(next && next.startsWith('/') && !next.startsWith('//') ? next : '/', { replace: true });
     } catch (err) {
       setError(authErrorKey(err));
+      setDetail(detailFor(authErrorKey(err), err));
       setBusy(false);
     }
   }
@@ -82,7 +79,7 @@ export default function LoginPage() {
           <label htmlFor="phone">{t('login.phone')}</label>
           <input id="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="012-345 6789" value={phone} onChange={(e) => setPhone(e.target.value)} />
           <p className="muted">{t('login.phoneHint')}</p>
-          {error && <p className="err" role="alert">{t(error)}</p>}
+          {error && <p className="err" role="alert">{t(error)}{detail && <small className="muted"> ({detail})</small>}</p>}
           <button type="submit" className="btn primary block" disabled={busy}>{t('login.sendCode')}</button>
         </form>
       ) : (
@@ -90,7 +87,7 @@ export default function LoginPage() {
           <p>{t('login.codeSent', { phone })}</p>
           <label htmlFor="code">{t('login.code')}</label>
           <input id="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
-          {error && <p className="err" role="alert">{t(error)}</p>}
+          {error && <p className="err" role="alert">{t(error)}{detail && <small className="muted"> ({detail})</small>}</p>}
           <button type="submit" className="btn primary block" disabled={busy || code.length !== 6}>{t('login.verify')}</button>
           <button type="button" className="btn block" style={{ marginTop: 8 }} disabled={busy || wait > 0} onClick={() => sendCode()}>
             {wait > 0 ? t('login.resendIn', { s: wait }) : t('login.resend')}
