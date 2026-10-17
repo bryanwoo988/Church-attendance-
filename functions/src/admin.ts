@@ -7,12 +7,8 @@ import { MAX_SEN } from '../../shared/money';
 
 const str = (v: unknown) => (typeof v === 'string' && v.length > 0 && v.length <= 64 ? v : null);
 
-export const mergePeople = onCall<{ fromPersonId: string; intoPersonId: string }>({ region: REGION }, async (request) => {
-  await requireRole(request, ['admin']);
-  const fromId = str(request.data?.fromPersonId);
-  const intoId = str(request.data?.intoPersonId);
-  if (!fromId || !intoId || fromId === intoId) throw new HttpsError('invalid-argument', 'merge.invalid');
-
+/** Move one person's attendance and offerings onto another and deactivate the first. */
+export async function mergeInto(fromId: string, intoId: string): Promise<{ movedAttendance: number; movedOfferings: number }> {
   const [fromSnap, intoSnap] = await db.getAll(db.doc(`people/${fromId}`), db.doc(`people/${intoId}`));
   if (!fromSnap.exists || !intoSnap.exists) throw new HttpsError('not-found', 'merge.notFound');
   if (fromSnap.get('accountUid') && intoSnap.get('accountUid')) throw new HttpsError('failed-precondition', 'merge.twoAccounts');
@@ -48,6 +44,15 @@ export const mergePeople = onCall<{ fromPersonId: string; intoPersonId: string }
   }
   await batch.close();
   return { movedAttendance, movedOfferings: offs.size };
+}
+
+export const mergePeople = onCall<{ fromPersonId: string; intoPersonId: string }>({ region: REGION }, async (request) => {
+  await requireRole(request, ['admin']);
+  const fromId = str(request.data?.fromPersonId);
+  const intoId = str(request.data?.intoPersonId);
+  if (!fromId || !intoId || fromId === intoId) throw new HttpsError('invalid-argument', 'merge.invalid');
+
+  return mergeInto(fromId, intoId);
 });
 
 interface EditReq { offeringId: string; amountSen?: number; category?: string; delete?: boolean }

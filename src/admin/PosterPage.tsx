@@ -30,6 +30,7 @@ export default function PosterPage() {
         <h1>{t('home.posters')}</h1>
         <p className="muted">{t('poster.hint')}</p>
         <button className="btn primary block" onClick={() => window.print()}>{t('poster.print')}</button>
+        <p className="muted">{t('poster.phoneHint')}</p>
       </div>
       {m ? (
         <Poster url={`${origin}/checkin?m=${encodeURIComponent(m)}`} title="poster.meetingTitle" caption="poster.checkinCaption" />

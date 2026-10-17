@@ -36,3 +36,13 @@ describe('LoginPage', () => {
     expect(await screen.findByLabelText(t('login.code'))).toBeInTheDocument();
   });
 });
+
+describe('LoginPage error details', () => {
+  it('shows the error code for an unexpected failure', async () => {
+    signInWithPhoneNumber.mockRejectedValue({ code: 'auth/error-code:-39' });
+    render(<MemoryRouter><LoginPage /></MemoryRouter>);
+    await userEvent.type(screen.getByLabelText(t('login.phone')), '011-4001 5077');
+    await userEvent.click(screen.getByRole('button', { name: t('login.sendCode') }));
+    expect(await screen.findByText(/auth\/error-code:-39/)).toBeInTheDocument();
+  });
+});
