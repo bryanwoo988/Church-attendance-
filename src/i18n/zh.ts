@@ -269,5 +269,8 @@ export const zh = {
   "manual.add": "新增并签到",
   "manual.close": "关闭",
   "poster.selfOff": "自助签到已关闭，所以只需要打印「新朋友」海报。会友签到由签到员扫他们的 QR 码。",
+  "scan.noMeetingWhy": "扫码和「手动签到」要有今天的聚会才会出现。主日聚会会在当天自动出现；小组或活动要先开聚会。",
+  "scan.openMeeting": "去开今天的聚会",
+  "update.ready": "App 已更新，点这里刷新",
 };
 export type MessageKey = keyof typeof zh;

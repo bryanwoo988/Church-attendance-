@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthProvider';
 import { fetchPersonWithFamily, useGroups, useMeetingsOn } from '../api';
 import { useT, type MessageKey } from '../i18n';
@@ -85,7 +86,15 @@ export default function ScannerPage() {
     return record([person.id], [person.name]);
   }
 
-  if (meetings && allowed.length === 0) return <p className="card">{t('scan.noMeeting')}</p>;
+  if (meetings && allowed.length === 0) {
+    return (
+      <div className="card">
+        <p>{t('scan.noMeeting')}</p>
+        <p className="muted">{t('scan.noMeetingWhy')}</p>
+        {(roles.includes('admin') || roles.includes('leader')) && <Link className="btn primary block" to="/admin/meetings">{t('scan.openMeeting')}</Link>}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -96,13 +105,6 @@ export default function ScannerPage() {
         </select>
       )}
       {meeting && <p className="muted">{t('scan.recordingFor', { title: meeting.title })}</p>}
-      <CameraScanner onDecode={onDecode} paused={!!picker || manual} />
-      {feedback && (
-        <div className={`card feedback ${feedback.kind}`} role="status">
-          {feedback.names?.map((n) => <div key={n} className="qrname">{n}</div>)}
-          <div className={feedback.kind}>{t(feedback.msg, { time: feedback.time ?? '' })}</div>
-        </div>
-      )}
       {meeting && (manual ? (
         <ManualCheckin
           meetingId={meeting.id}
@@ -111,8 +113,15 @@ export default function ScannerPage() {
           onClose={() => setManual(false)}
         />
       ) : !picker && (
-        <button className="btn block" style={{ marginTop: 12 }} onClick={() => setManual(true)}>{t('manual.open')}</button>
+        <button className="btn primary block" style={{ marginBottom: 12 }} onClick={() => setManual(true)}>{t('manual.open')}</button>
       ))}
+      <CameraScanner onDecode={onDecode} paused={!!picker || manual} />
+      {feedback && (
+        <div className={`card feedback ${feedback.kind}`} role="status">
+          {feedback.names?.map((n) => <div key={n} className="qrname">{n}</div>)}
+          <div className={feedback.kind}>{t(feedback.msg, { time: feedback.time ?? '' })}</div>
+        </div>
+      )}
       {picker && (
         <div className="card">
           <FamilyPicker people={picker} busy={busy} onConfirm={(ids) => record(ids, picker.filter((p) => ids.includes(p.id)).map((p) => p.name))} />

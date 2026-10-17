@@ -12,8 +12,10 @@ vi.mock('./CameraScanner', () => ({
 const recordScan = vi.fn();
 vi.mock('./offlineStatus', async (orig) => ({ ...(await orig<object>()), recordScan: (...a: unknown[]) => recordScan(...a) }));
 vi.mock('../firebase', () => ({ db: {} }));
+let meetings: unknown[] = [];
 vi.mock('../api', () => ({
-  useMeetingsOn: () => [{ id: 'sunday-x', type: 'sunday', title: '主日', date: '2026-10-18', checkinMode: 'always' }],
+  useMeetingsOn: () => meetings,
+  usePeople: () => [],
   useGroups: () => [],
   fetchPersonWithFamily: vi.fn().mockResolvedValue({
     person: { id: 'p1', name: 'Mary', householdId: 'h1', kind: 'adult', status: 'member', active: true, visitCount: 0, createdAt: new Date() },
@@ -35,9 +37,25 @@ function renderPage() {
   );
 }
 
-beforeEach(() => { setLang('zh'); recordScan.mockReset(); });
+beforeEach(() => {
+  setLang('zh');
+  recordScan.mockReset();
+  meetings = [{ id: 'sunday-x', type: 'sunday', title: '主日', date: '2026-10-18', checkinMode: 'always' }];
+});
 
 describe('ScannerPage', () => {
+  it('shows manual check-in above the camera', () => {
+    renderPage();
+    const manual = screen.getByRole('button', { name: t('manual.open') });
+    expect(manual.compareDocumentPosition(screen.getByText('camera')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('explains why there is nothing to scan when no meeting is on today', () => {
+    meetings = [];
+    renderPage();
+    expect(screen.getByText(t('scan.noMeetingWhy'))).toBeInTheDocument();
+  });
+
   it('shows a message for a non-church QR', async () => {
     renderPage();
     await act(async () => decode('https://shop.example'));

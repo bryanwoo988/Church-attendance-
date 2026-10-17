@@ -270,4 +270,7 @@ export const en: Record<MessageKey, string> = {
   "manual.add": "Add and check in",
   "manual.close": "Close",
   "poster.selfOff": "Self check-in is off, so only the newcomer poster is needed. Members are checked in by door scanners.",
+  "scan.noMeetingWhy": "Scanning and manual check-in appear once there is a meeting today. Sunday services appear automatically; open a meeting for groups or events.",
+  "scan.openMeeting": "Open a meeting for today",
+  "update.ready": "App updated. Tap to refresh",
 };
