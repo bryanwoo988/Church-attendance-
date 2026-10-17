@@ -24,6 +24,7 @@ async function latestCode(phone: string): Promise<string> {
 
 async function login(page: Page, local: string, e164: string, name: string) {
   await page.goto('/login');
+  await page.getByRole('button', { name: '中文' }).click(); // first visit asks for a language
   await page.getByLabel('电话号码').fill(local);
   await page.getByRole('button', { name: '发送验证码' }).click();
   await expect(page.getByLabel('验证码')).toBeVisible();
@@ -128,6 +129,8 @@ test('admin sets up, family checks in, finance exports, language switches', asyn
 
 test('newcomer form works without login', async ({ page }) => {
   await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Choose your language' })).toBeVisible();
+  await page.getByRole('button', { name: '中文' }).click();
   await page.getByLabel('名字').fill('New Friend');
   await page.getByLabel('手机号码').fill('017-765 4321');
   await page.getByLabel('我同意以上个人资料使用说明（PDPA）').check();

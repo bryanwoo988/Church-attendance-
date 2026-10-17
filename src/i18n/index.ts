@@ -8,22 +8,32 @@ export type { MessageKey };
 const dicts: Record<Lang, Record<MessageKey, string>> = { zh, en };
 const listeners = new Set<() => void>();
 
-function readStored(): Lang {
+function readStored(): Lang | null {
   try {
-    return localStorage.getItem('lang') === 'en' ? 'en' : 'zh';
+    const v = localStorage.getItem('lang');
+    return v === 'en' || v === 'zh' ? v : null;
   } catch {
-    return 'zh';
+    return null;
   }
 }
 
-let current: Lang = readStored();
+const stored = readStored();
+// English unless the person has picked a language; first-time users are asked to choose.
+let current: Lang = stored ?? 'en';
+let chosen = stored !== null;
+if (typeof document !== 'undefined') document.documentElement.lang = current === 'zh' ? 'zh-Hans' : 'en';
 
 export function getLang(): Lang {
   return current;
 }
 
+export function hasChosenLang(): boolean {
+  return chosen;
+}
+
 export function setLang(l: Lang): void {
   current = l;
+  chosen = true;
   try {
     localStorage.setItem('lang', l);
   } catch {
@@ -47,4 +57,9 @@ function subscribe(fn: () => void) {
 export function useT() {
   const lang = useSyncExternalStore(subscribe, getLang);
   return { t, lang, setLang };
+}
+
+/** True once the person has picked a language (re-renders when they do). */
+export function useLangChosen(): boolean {
+  return useSyncExternalStore(subscribe, hasChosenLang);
 }

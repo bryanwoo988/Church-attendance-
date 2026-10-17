@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router';
-import { useT } from './i18n';
+import { useLangChosen, useT } from './i18n';
+import LanguagePicker from './i18n/LanguagePicker';
 import { useAppUpdated } from './util/useAppUpdated';
 import './app.css';
 
@@ -7,6 +8,14 @@ export default function App() {
   const { t, lang, setLang } = useT();
   const updated = useAppUpdated();
   const atHome = useLocation().pathname === '/';
+  const langChosen = useLangChosen();
+  if (!langChosen) {
+    return (
+      <div className="shell">
+        <main className="content"><LanguagePicker /></main>
+      </div>
+    );
+  }
   return (
     <div className="shell">
       <header className="topbar">
