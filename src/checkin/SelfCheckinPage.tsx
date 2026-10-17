@@ -6,8 +6,9 @@ import { call } from '../firebase';
 import { errorKey } from '../data';
 import { useT, type MessageKey } from '../i18n';
 import FamilyPicker from './FamilyPicker';
+import { klTime } from '../../shared/dates';
 
-interface Res { meetingId: string; meetingTitle: string; results: { personId: string; status: 'ok' | 'already' }[] }
+interface Res { meetingId: string; meetingTitle: string; results: { personId: string; status: 'ok' | 'already'; at?: string }[] }
 
 const KNOWN: MessageKey[] = ['checkin.closed', 'checkin.noMeeting', 'checkin.notYourFamily'];
 
@@ -56,7 +57,9 @@ export default function SelfCheckinPage() {
           {result.results.map((r) => (
             <div key={r.personId} style={{ margin: '8px 0' }}>
               <div className="qrname">{nameOf(r.personId)}</div>
-              <div className={r.status === 'ok' ? 'ok' : 'warn'}>{t(r.status === 'ok' ? 'scan.ok' : 'scan.already')}</div>
+              <div className={r.status === 'ok' ? 'ok' : 'warn'}>
+                {r.status === 'ok' ? t('scan.ok') : r.at ? t('scan.alreadyAt', { time: klTime(new Date(r.at)) }) : t('scan.already')}
+              </div>
             </div>
           ))}
           <Link className="btn block" to="/" style={{ marginTop: 12 }}>{t('common.back')}</Link>

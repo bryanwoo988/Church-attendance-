@@ -28,7 +28,7 @@ export default function HomePage() {
         )}
       </div>
       <div className="grid2">
-        <Link className="btn primary" to="/checkin">{t('home.checkin')}</Link>
+        <Link className="btn primary" to="/scan-poster">{t('home.checkin')}</Link>
         <Link className="btn primary" to="/offering">{t('home.offering')}</Link>
         <Link className="btn" to="/family">{t('family.title')}</Link>
         <Link className="btn" to="/me">{t('mydata.title')}</Link>

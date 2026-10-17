@@ -228,5 +228,16 @@ export const zh = {
   "phone.reLogin": "为了安全，请先登出再登录一次，然后再更换号码。",
   "phone.done": "已更换为 {phone}，下次请用这个号码登录。",
   "poster.phoneHint": "用手机的话，打印按钮可能没反应：请按浏览器的「分享 → 打印」，或在电脑上打开这一页打印。",
+  "scan.alreadyAt": "已经签过（{time}）",
+  "rec.sunday": "主日",
+  "rec.group": "小组",
+  "rec.event": "活动",
+  "method.scanner": "签到员扫码",
+  "method.self": "自助签到",
+  "method.visitorForm": "新朋友表格",
+  "posterScan.title": "扫描海报签到",
+  "posterScan.hint": "把镜头对准门口海报上的 QR 码",
+  "posterScan.notPoster": "这不是教会海报的 QR 码",
+  "posterScan.skip": "不用扫码，直接签到",
 };
 export type MessageKey = keyof typeof zh;

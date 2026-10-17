@@ -2,21 +2,21 @@ import { useMemo, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { fetchPersonWithFamily, useGroups, useMeetingsOn } from '../api';
 import { useT, type MessageKey } from '../i18n';
-import { klDate } from '../../shared/dates';
+import { klDate, klTime } from '../../shared/dates';
 import { resolveCurrentMeeting } from '../../shared/checkin';
 import type { Person } from '../../shared/types';
 import CameraScanner from './CameraScanner';
 import FamilyPicker from './FamilyPicker';
-import { makeScanGate, recordScan, type ScanStatus } from './offlineStatus';
+import { makeScanGate, recordScan, type ScanResult } from './offlineStatus';
 
-type Feedback = { kind: 'ok' | 'warn' | 'err'; msg: MessageKey; names?: string[] };
+type Feedback = { kind: 'ok' | 'warn' | 'err'; msg: MessageKey; names?: string[]; time?: string };
 
-const statusMsg = (statuses: ScanStatus[]): Feedback =>
-  statuses.includes('queued')
-    ? { kind: 'warn', msg: 'scan.savedOffline' }
-    : statuses.every((s) => s === 'already')
-      ? { kind: 'warn', msg: 'scan.already' }
-      : { kind: 'ok', msg: 'scan.ok' };
+const statusMsg = (res: ScanResult[]): Feedback => {
+  if (res.some((r) => r.status === 'queued')) return { kind: 'warn', msg: 'scan.savedOffline' };
+  if (!res.every((r) => r.status === 'already')) return { kind: 'ok', msg: 'scan.ok' };
+  const at = res.find((r) => r.at)?.at;
+  return at ? { kind: 'warn', msg: 'scan.alreadyAt', time: klTime(at) } : { kind: 'warn', msg: 'scan.already' };
+};
 
 export default function ScannerPage() {
   const { t } = useT();
@@ -51,7 +51,7 @@ export default function ScannerPage() {
     setBusy(true);
     try {
       const res = await recordScan(meeting.id, meeting.date, ids, uid);
-      show({ ...statusMsg(res.map((r) => r.status)), names });
+      show({ ...statusMsg(res), names });
     } catch {
       show({ kind: 'err', msg: 'common.error' });
     } finally {
@@ -97,7 +97,7 @@ export default function ScannerPage() {
       {feedback && (
         <div className={`card feedback ${feedback.kind}`} role="status">
           {feedback.names?.map((n) => <div key={n} className="qrname">{n}</div>)}
-          <div className={feedback.kind}>{t(feedback.msg)}</div>
+          <div className={feedback.kind}>{t(feedback.msg, { time: feedback.time ?? '' })}</div>
         </div>
       )}
       {picker && (

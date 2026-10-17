@@ -4,6 +4,7 @@ import LoginPage from './auth/LoginPage';
 import { RequireAuth, RequireRole } from './auth/RequireRole';
 import ScannerPage from './checkin/ScannerPage';
 import SelfCheckinPage from './checkin/SelfCheckinPage';
+import ScanPosterPage from './checkin/ScanPosterPage';
 import WelcomePage from './welcome/WelcomePage';
 import OfferingPage from './offering/OfferingPage';
 import PeoplePage from './admin/PeoplePage';
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
       { path: 'leader/attendance', element: <RequireRole any={['leader', 'admin']}><GroupAttendancePage /></RequireRole> },
       { path: 'admin/newcomers', element: <RequireRole any={['admin']}><NewcomersPage /></RequireRole> },
       { path: 'offering', element: <RequireAuth><OfferingPage /></RequireAuth> },
+      { path: 'scan-poster', element: <RequireAuth><ScanPosterPage /></RequireAuth> },
       { path: 'checkin', element: <RequireAuth><SelfCheckinPage /></RequireAuth> },
       { path: 'scan', element: <RequireRole any={['scanner', 'leader', 'admin']}><ScannerPage /></RequireRole> },
     ],

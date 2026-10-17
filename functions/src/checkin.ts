@@ -6,7 +6,7 @@ import { attendanceId, isCheckinOpen, resolveCurrentMeeting } from '../../shared
 import type { Meeting } from '../../shared/types';
 
 interface Req { meetingId?: string; personIds: string[] }
-interface Res { meetingId: string; meetingTitle: string; results: { personId: string; status: 'ok' | 'already' }[] }
+interface Res { meetingId: string; meetingTitle: string; results: { personId: string; status: 'ok' | 'already'; at?: string }[] }
 
 export const selfCheckIn = onCall<Req, Promise<Res>>({ region: REGION }, async (request) => {
   const user = await requireUser(request);
@@ -33,14 +33,16 @@ export const selfCheckIn = onCall<Req, Promise<Res>>({ region: REGION }, async (
 
   const results = await Promise.all(
     ids.map(async (personId) => {
+      const ref = db.doc(`attendance/${attendanceId(m.id, personId)}`);
       try {
-        await db.doc(`attendance/${attendanceId(m.id, personId)}`).create({
+        await ref.create({
           meetingId: m.id, personId, date: m.date, method: 'self', byUid: user.uid, at: FieldValue.serverTimestamp(),
         });
         return { personId, status: 'ok' as const };
       } catch (e: any) {
-        if (e?.code === 6) return { personId, status: 'already' as const }; // ALREADY_EXISTS
-        throw e;
+        if (e?.code !== 6) throw e; // 6 = ALREADY_EXISTS
+        const at: Date | undefined = (await ref.get()).get('at')?.toDate();
+        return at ? { personId, status: 'already' as const, at: at.toISOString() } : { personId, status: 'already' as const };
       }
     }),
   );

@@ -1,24 +1,28 @@
-import { doc, getDocFromCache, serverTimestamp, setDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocFromCache, serverTimestamp, setDoc, type DocumentSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { attendanceId } from '../../shared/checkin';
 import { parsePersonalQr } from '../../shared/qr';
 import { settleWithin, SERVER_WAIT_MS } from '../util/settle';
 
 export type ScanStatus = 'ok' | 'already' | 'queued';
+export interface ScanResult { personId: string; status: ScanStatus; at?: Date }
+
+/** 'already' with the original check-in time when we can read it. */
+function already(personId: string, snap?: DocumentSnapshot): ScanResult {
+  const at: Date | undefined = snap?.get('at')?.toDate?.();
+  return at ? { personId, status: 'already', at } : { personId, status: 'already' };
+}
 
 /**
  * Record door-scanner attendance. Offline writes go to Firestore's local queue and sync later;
  * the deterministic doc id makes a re-sync or a second scan harmless.
  */
-export async function recordScan(meetingId: string, date: string, personIds: string[], byUid: string, waitMs = SERVER_WAIT_MS): Promise<{ personId: string; status: ScanStatus }[]> {
+export async function recordScan(meetingId: string, date: string, personIds: string[], byUid: string, waitMs = SERVER_WAIT_MS): Promise<ScanResult[]> {
   return Promise.all(
     personIds.map(async (personId) => {
       const ref = doc(db, 'attendance', attendanceId(meetingId, personId));
-      try {
-        if ((await getDocFromCache(ref)).exists()) return { personId, status: 'already' as const };
-      } catch {
-        // not in cache
-      }
+      const cached = await getDocFromCache(ref).catch(() => undefined); // throws when not cached
+      if (cached?.exists()) return already(personId, cached);
       const write = setDoc(ref, { meetingId, personId, date, method: 'scanner', byUid, at: serverTimestamp() });
       if (!navigator.onLine) {
         write.catch(() => {});
@@ -33,7 +37,7 @@ export async function recordScan(meetingId: string, date: string, personIds: str
         return { personId, status: 'ok' as const };
       } catch (e) {
         // Rules allow create only, so an existing record surfaces as permission-denied.
-        if ((e as { code?: string })?.code === 'permission-denied') return { personId, status: 'already' as const };
+        if ((e as { code?: string })?.code === 'permission-denied') return already(personId, await getDoc(ref).catch(() => undefined));
         throw e;
       }
     }),

@@ -10,6 +10,18 @@ export function klDate(d: Date): string {
   return klFmt.format(d);
 }
 
+const klTimeFmt = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Kuala_Lumpur',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+/** Wall-clock time in Malaysia, formatted HH:mm. */
+export function klTime(d: Date): string {
+  return klTimeFmt.format(d);
+}
+
 /** The instant at which `HH:mm` on KL date `date` occurs. */
 export function klDateTime(date: string, hhmm: string): Date {
   return new Date(`${date}T${hhmm}:00+08:00`);

@@ -63,7 +63,12 @@ test('admin sets up, family checks in, finance exports, language switches', asyn
   // Doing it again reports already checked in.
   await page.goto('/checkin');
   await page.getByRole('button', { name: '确认签到（2 人）' }).click();
-  await expect(page.getByText('已经签过')).toHaveCount(2);
+  await expect(page.getByText(/已经签过（\d\d:\d\d）/)).toHaveCount(2);
+
+  // My records name the meeting, the time and how each person checked in.
+  await page.goto('/me');
+  await expect(page.getByText('活动 · 测试聚会')).toHaveCount(2);
+  await expect(page.getByText(/· 自助签到/)).toHaveCount(2);
 
   // Offering.
   await page.goto('/offering');

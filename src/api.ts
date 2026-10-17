@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where,
+  addDoc, collection, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where,
   type QueryConstraint,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -53,6 +53,20 @@ export function useHouseholdAttendance(personIds: string[]): Attendance[] | unde
     attendanceFrom,
     [key],
   );
+}
+
+/** Meetings by id, read once (served from the offline cache when there's no network). */
+export function useMeetingsByIds(ids: string[]): Meeting[] | undefined {
+  const [rows, setRows] = useState<Meeting[]>();
+  const key = [...new Set(ids)].sort().join(',');
+  useEffect(() => {
+    let live = true;
+    const unique = key ? key.split(',') : [];
+    Promise.all(unique.map((id) => getDoc(doc(db, 'meetings', id)).catch(() => null)))
+      .then((snaps) => live && setRows(snaps.filter((s) => s?.exists()).map((s) => meetingFrom(s!))));
+    return () => { live = false; };
+  }, [key]);
+  return rows;
 }
 
 export function useMyOfferings(uid: string | undefined): Offering[] | undefined {

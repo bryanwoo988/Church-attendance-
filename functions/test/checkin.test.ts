@@ -31,6 +31,13 @@ describe('selfCheckIn', () => {
     expect((await db.collection('attendance').get()).size).toBe(2);
   });
 
+  it('already returns the original check-in time', async () => {
+    await callFn('selfCheckIn', { personIds: ['p_mem'] }, MEM);
+    const first = (await db.doc(`attendance/sunday-${today}_p_mem`).get()).get('at').toDate().toISOString();
+    const r = await callFn<any>('selfCheckIn', { personIds: ['p_mem'] }, MEM);
+    expect(r.ok && r.data.results[0]).toEqual({ personId: 'p_mem', status: 'already', at: first });
+  });
+
   it('refuses a person from another household and writes nothing', async () => {
     const r = await callFn('selfCheckIn', { personIds: ['p_mem', 'p_other'] }, MEM);
     expect(r).toMatchObject({ ok: false, status: 'PERMISSION_DENIED' });

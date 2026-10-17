@@ -40,6 +40,13 @@ describe('SelfCheckinPage', () => {
     expect(await screen.findByText(t('scan.ok'))).toBeInTheDocument();
   });
 
+  it('shows when an already-checked-in person was recorded', async () => {
+    family = [P('p1', 'Mary')];
+    call.mockResolvedValue({ meetingId: 'm', meetingTitle: '主日', results: [{ personId: 'p1', status: 'already', at: '2026-10-18T01:05:00.000Z' }] });
+    renderPage();
+    expect(await screen.findByText(t('scan.alreadyAt', { time: '09:05' }))).toBeInTheDocument();
+  });
+
   it('passes the meeting id from the poster link', async () => {
     family = [P('p1', 'Mary')];
     call.mockResolvedValue({ meetingId: 'g1', meetingTitle: '小组', results: [{ personId: 'p1', status: 'ok' }] });
