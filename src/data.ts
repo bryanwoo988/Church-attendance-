@@ -31,6 +31,7 @@ export function groupFrom(s: Snap): Group {
 
 /** Map a callable error to its message key when it is one of ours (e.g. 'checkin.closed'). */
 export function errorKey(e: unknown): string | null {
-  const m = (e as { message?: string })?.message;
+  // The Firebase SDK appends the HTTP status, e.g. "checkin.closed [400]".
+  const m = (e as { message?: string })?.message?.replace(/\s*\[\d{3}\]$/, '');
   return m && /^[a-z]+\.[A-Za-z]+$/.test(m) ? m : null;
 }

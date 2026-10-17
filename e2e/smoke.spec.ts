@@ -76,6 +76,10 @@ test('admin sets up, family checks in, finance exports, language switches', asyn
   // Self check-in is off by default: no 签到 button on home, and /checkin refuses.
   await page.goto('/');
   await expect(page.getByRole('link', { name: '签到', exact: true })).toHaveCount(0);
+  // ...and the server's reason reaches the screen (not a generic error).
+  await page.goto('/checkin');
+  await page.getByRole('button', { name: '确认签到（2 人）' }).click();
+  await expect(page.getByText('教会目前用签到员扫码签到')).toBeVisible();
 
   // Door scanner: manual check-in of a newcomer with no QR code.
   await page.goto('/scan');
