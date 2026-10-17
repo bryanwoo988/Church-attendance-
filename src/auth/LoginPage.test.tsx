@@ -66,4 +66,11 @@ describe('LoginPage', () => {
     expect(await screen.findByText(t('login.sendFailed'))).toBeInTheDocument();
     expect(screen.getByText(/Twilio 21408/)).toBeInTheDocument();
   });
+
+  it('shows the Twilio code when fraud protection blocks a number', async () => {
+    call.mockRejectedValue({ code: 'functions/permission-denied', message: 'login.blocked [403]', details: { twilio: 60410 } });
+    await sendTo('011-4001 5077');
+    expect(await screen.findByText(t('login.blocked'))).toBeInTheDocument();
+    expect(screen.getByText(/Twilio 60410/)).toBeInTheDocument();
+  });
 });

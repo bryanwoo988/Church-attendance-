@@ -51,7 +51,8 @@ function sendError(status: number, body: any): HttpsError {
   const code = Number(body?.code);
   if (status === 429 || code === 60203) return new HttpsError('resource-exhausted', 'login.tooMany');
   if (code === 60200 || code === 21211 || code === 21614) return new HttpsError('invalid-argument', 'login.invalidPhone');
-  if (code === 60410 || code === 60605) return new HttpsError('permission-denied', 'login.blocked');
+  // Fraud Guard (60410) or geo permissions (60605): an admin can unblock the number in Twilio Verify logs.
+  if (code === 60410 || code === 60605) return new HttpsError('permission-denied', 'login.blocked', { twilio: code });
   console.error('twilio send failed', status, code, body?.message);
   // Not 'unavailable': a 503 can lose its body on the way, hiding the reason. The Twilio code goes to the screen.
   return new HttpsError('failed-precondition', 'login.sendFailed', { twilio: code || status });
