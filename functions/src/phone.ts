@@ -9,7 +9,7 @@ import { normalizeMyPhone } from '../../shared/phone';
  * caller's person record. An earlier newcomer record with that number is the same human, so it is
  * merged in; a number owned by another account is refused. Callable by any signed-in user.
  */
-export const syncMyPhone = onCall({ region: REGION }, async (request) => {
+export const syncMyPhone = onCall({ region: REGION, invoker: 'public' }, async (request) => {
   const user = await requireUser(request);
   const raw = request.auth?.token.phone_number;
   const phone = raw ? normalizeMyPhone(raw) : null;
