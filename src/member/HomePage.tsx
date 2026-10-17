@@ -30,6 +30,7 @@ export default function HomePage() {
         )}
       </div>
       <div className="grid2">
+        <Link className="btn primary" to="/history">{t('history.title')}</Link>
         {settings?.selfCheckin && <Link className="btn primary" to="/scan-poster">{t('home.checkin')}</Link>}
         <Link className="btn primary" to="/offering">{t('home.offering')}</Link>
         <Link className="btn" to="/family">{t('family.title')}</Link>

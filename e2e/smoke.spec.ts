@@ -77,7 +77,7 @@ test('admin sets up, family checks in, finance exports, language switches', asyn
 
   // Door scanner: manual check-in of a newcomer with no QR code.
   await page.goto('/scan');
-  await page.getByRole('button', { name: '手动签到（没有 QR 码）' }).click();
+  await page.getByRole('button', { name: '手动签到', exact: true }).click();
   await page.getByLabel('输入名字或电话找人').fill('Ah Kow');
   await page.getByRole('button', { name: '新增并签到' }).click();
   await expect(page.getByText('✓ 已签到')).toBeVisible();
@@ -98,7 +98,8 @@ test('admin sets up, family checks in, finance exports, language switches', asyn
   await expect(page.getByText(/已经签过（\d\d:\d\d）/)).toHaveCount(2);
 
   // My records name the meeting, the time and how each person checked in.
-  await page.goto('/me');
+  await page.goto('/');
+  await page.getByRole('link', { name: '签到记录' }).click();
   await expect(page.getByText('活动 · 测试聚会')).toHaveCount(2);
   await expect(page.getByText(/· 自助签到/)).toHaveCount(2);
 

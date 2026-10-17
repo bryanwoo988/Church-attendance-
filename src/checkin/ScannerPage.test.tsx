@@ -44,10 +44,14 @@ beforeEach(() => {
 });
 
 describe('ScannerPage', () => {
-  it('shows manual check-in above the camera', () => {
+  it('switches between scanning and manual check-in; manual hides the camera', async () => {
     renderPage();
-    const manual = screen.getByRole('button', { name: t('manual.open') });
-    expect(manual.compareDocumentPosition(screen.getByText('camera')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText('camera')).toBeInTheDocument();
+    await act(async () => screen.getByRole('button', { name: t('scan.tabManual') }).click());
+    expect(screen.queryByText('camera')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(t('manual.search'))).toBeInTheDocument();
+    await act(async () => screen.getByRole('button', { name: t('scan.tabScan') }).click());
+    expect(screen.getByText('camera')).toBeInTheDocument();
   });
 
   it('explains why there is nothing to scan when no meeting is on today', () => {

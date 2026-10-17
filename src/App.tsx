@@ -1,4 +1,4 @@
-import { Outlet, Link } from 'react-router';
+import { Outlet, Link, useLocation } from 'react-router';
 import { useT } from './i18n';
 import { useAppUpdated } from './util/useAppUpdated';
 import './app.css';
@@ -6,10 +6,11 @@ import './app.css';
 export default function App() {
   const { t, lang, setLang } = useT();
   const updated = useAppUpdated();
+  const atHome = useLocation().pathname === '/';
   return (
     <div className="shell">
       <header className="topbar">
-        <Link to="/" className="brand">{t('app.title')}</Link>
+        {atHome ? <Link to="/" className="brand">{t('app.title')}</Link> : <Link to="/" className="brand">{t('nav.home')}</Link>}
         <button className="lang" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
           {t('lang.toggle')}
         </button>

@@ -21,10 +21,11 @@ beforeEach(async () => {
 
 describe('scannerAddVisitor', () => {
   it('creates a newcomer and checks them in', async () => {
-    const r = await callFn<any>('scannerAddVisitor', { meetingId: M, name: ' Ah Kow ', phone: '012-888 7777', kind: 'adult' }, SCAN);
+    const r = await callFn<any>('scannerAddVisitor', { meetingId: M, name: ' Ah Kow ', phone: '012-888 7777', kind: 'adult', howHeard: 'welcome.how.friend', contactConsent: true, pdpaTold: true }, SCAN);
     expect(r).toMatchObject({ ok: true, data: { status: 'ok', created: true } });
     const p = (await db.doc(`people/${r.ok && r.data.personId}`).get()).data();
-    expect(p).toMatchObject({ name: 'Ah Kow', phone: '+60128887777', status: 'visitor', kind: 'adult', visitCount: 1, firstVisitDate: today, lastVisitDate: today, active: true });
+    expect(p).toMatchObject({ name: 'Ah Kow', phone: '+60128887777', status: 'visitor', kind: 'adult', visitCount: 1, firstVisitDate: today, lastVisitDate: today, active: true, howHeard: 'welcome.how.friend', contactConsent: true });
+    expect(p?.pdpaConsentAt).toBeDefined();
     const a = (await db.doc(`attendance/${M}_${r.ok && r.data.personId}`).get()).data();
     expect(a).toMatchObject({ meetingId: M, method: 'scanner', byUid: 'u_scan', date: today });
   });
@@ -38,22 +39,28 @@ describe('scannerAddVisitor', () => {
   });
 
   it('a known phone checks in that person instead of creating a duplicate', async () => {
-    const r = await callFn<any>('scannerAddVisitor', { meetingId: M, name: 'Someone', phone: '0123456789', kind: 'adult' }, SCAN);
+    const r = await callFn<any>('scannerAddVisitor', { meetingId: M, name: 'Someone', phone: '0123456789', kind: 'adult', pdpaTold: true }, SCAN);
     expect(r).toMatchObject({ ok: true, data: { personId: 'p_mem', status: 'ok', created: false } });
     expect((await db.collection('people').get()).size).toBe(1);
-    const again = await callFn<any>('scannerAddVisitor', { meetingId: M, name: 'Someone', phone: '0123456789', kind: 'adult' }, SCAN);
+    const again = await callFn<any>('scannerAddVisitor', { meetingId: M, name: 'Someone', phone: '0123456789', kind: 'adult', pdpaTold: true }, SCAN);
     expect(again).toMatchObject({ ok: true, data: { personId: 'p_mem', status: 'already' } });
   });
 
   it('rejects members without a scanner role, a missing name and a bad phone', async () => {
     expect(await callFn('scannerAddVisitor', { meetingId: M, name: 'X', kind: 'adult' }, MEM)).toMatchObject({ ok: false, status: 'PERMISSION_DENIED' });
     expect(await callFn('scannerAddVisitor', { meetingId: M, name: ' ', kind: 'adult' }, SCAN)).toMatchObject({ ok: false, message: 'welcome.nameRequired' });
-    expect(await callFn('scannerAddVisitor', { meetingId: M, name: 'X', phone: '123', kind: 'adult' }, SCAN)).toMatchObject({ ok: false, message: 'welcome.invalidPhone' });
+    expect(await callFn('scannerAddVisitor', { meetingId: M, name: 'X', phone: '123', kind: 'adult', pdpaTold: true }, SCAN)).toMatchObject({ ok: false, message: 'welcome.invalidPhone' });
     expect((await db.collection('people').get()).size).toBe(1);
   });
 
   it('a leader may add only to their own group meeting', async () => {
     expect(await callFn('scannerAddVisitor', { meetingId: M, name: 'X', kind: 'adult' }, LEAD)).toMatchObject({ ok: false, status: 'PERMISSION_DENIED' });
     expect(await callFn('scannerAddVisitor', { meetingId: 'mg1', name: 'X', kind: 'adult' }, LEAD)).toMatchObject({ ok: true });
+  });
+
+  it('a phone number needs the PDPA notice to have been given', async () => {
+    const r = await callFn('scannerAddVisitor', { meetingId: M, name: 'X', phone: '0128887777', kind: 'adult' }, SCAN);
+    expect(r).toMatchObject({ ok: false, message: 'manual.pdpaRequired' });
+    expect((await db.collection('people').get()).size).toBe(1);
   });
 });

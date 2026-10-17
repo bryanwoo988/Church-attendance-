@@ -44,8 +44,16 @@ describe('ManualCheckin', () => {
     await userEvent.type(screen.getByLabelText(t('manual.search')), 'Ah Kow');
     expect(screen.getByText(t('manual.none'))).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText(t('manual.phone')), '0128887777');
+    await userEvent.selectOptions(screen.getByLabelText(t('welcome.how')), 'welcome.how.friend');
+    await userEvent.click(screen.getByLabelText(t('manual.contact')));
     await userEvent.click(screen.getByRole('button', { name: t('manual.add') }));
-    expect(call).toHaveBeenCalledWith('scannerAddVisitor', { meetingId: 'm1', name: 'Ah Kow', phone: '0128887777', kind: 'adult' });
+    expect(call).not.toHaveBeenCalled();
+    expect(screen.getByText(t('manual.pdpaRequired'))).toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText(t('manual.pdpaTold')));
+    await userEvent.click(screen.getByRole('button', { name: t('manual.add') }));
+    expect(call).toHaveBeenCalledWith('scannerAddVisitor', {
+      meetingId: 'm1', name: 'Ah Kow', phone: '0128887777', kind: 'adult', howHeard: 'welcome.how.friend', contactConsent: true, pdpaTold: true,
+    });
     expect(onAdded).toHaveBeenCalledWith('Ah Kow', 'ok');
   });
 
@@ -54,8 +62,17 @@ describe('ManualCheckin', () => {
     renderIt();
     await userEvent.type(screen.getByLabelText(t('manual.search')), 'Ah Kow');
     await userEvent.type(screen.getByLabelText(t('manual.phone')), '123');
+    await userEvent.click(screen.getByLabelText(t('manual.pdpaTold')));
     await userEvent.click(screen.getByRole('button', { name: t('manual.add') }));
     expect(await screen.findByText(t('login.invalidPhone'))).toBeInTheDocument();
     expect(onAdded).not.toHaveBeenCalled();
+  });
+
+  it('adds without a phone and without the PDPA tick', async () => {
+    call.mockResolvedValue({ personId: 'new', status: 'ok', created: true });
+    renderIt();
+    await userEvent.type(screen.getByLabelText(t('manual.search')), 'Baby');
+    await userEvent.click(screen.getByRole('button', { name: t('manual.add') }));
+    expect(call).toHaveBeenCalledWith('scannerAddVisitor', { meetingId: 'm1', name: 'Baby', kind: 'adult', contactConsent: false, pdpaTold: false });
   });
 });

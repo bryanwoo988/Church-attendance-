@@ -19,6 +19,7 @@ import FinanceOfferingsPage from './finance/OfferingsPage';
 import HomePage from './member/HomePage';
 import FamilyPage from './member/FamilyPage';
 import MyDataPage from './member/MyDataPage';
+import HistoryPage from './member/HistoryPage';
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <RequireAuth><HomePage /></RequireAuth> },
       { path: 'family', element: <RequireAuth><FamilyPage /></RequireAuth> },
+      { path: 'history', element: <RequireAuth><HistoryPage /></RequireAuth> },
       { path: 'me', element: <RequireAuth><MyDataPage /></RequireAuth> },
       { path: 'login', element: <LoginPage /> },
       { path: 'welcome', element: <WelcomePage /> },

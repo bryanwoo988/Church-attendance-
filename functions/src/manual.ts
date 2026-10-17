@@ -4,7 +4,16 @@ import { requireUser } from './lib/auth';
 import { normalizeMyPhone } from '../../shared/phone';
 import { attendanceId } from '../../shared/checkin';
 
-interface Req { meetingId: string; name: string; phone?: string; kind: 'adult' | 'child' }
+interface Req {
+  meetingId: string;
+  name: string;
+  phone?: string;
+  kind: 'adult' | 'child';
+  howHeard?: string;
+  contactConsent?: boolean;
+  /** Scanner confirms they told the person how their data is used (PDPA). Required with a phone. */
+  pdpaTold?: boolean;
+}
 interface Res { personId: string; status: 'ok' | 'already'; created: boolean }
 
 /**
@@ -35,7 +44,9 @@ export const scannerAddVisitor = onCall<Req, Promise<Res>>({ region: REGION, inv
     const phone = normalizeMyPhone(rawPhone);
     if (!phone.ok) throw new HttpsError('invalid-argument', 'welcome.invalidPhone');
     e164 = phone.e164;
+    if (d.pdpaTold !== true) throw new HttpsError('invalid-argument', 'manual.pdpaRequired');
   }
+  const howHeard = typeof d.howHeard === 'string' && d.howHeard ? d.howHeard.slice(0, 40) : undefined;
 
   return db.runTransaction(async (tx) => {
     const found = e164
@@ -51,7 +62,10 @@ export const scannerAddVisitor = onCall<Req, Promise<Res>>({ region: REGION, inv
       tx.set(pRef, {
         name, householdId: hRef.id, kind, status: 'visitor', visitCount: 1,
         firstVisitDate: meeting.date, lastVisitDate: meeting.date, active: true, createdAt: FieldValue.serverTimestamp(),
+        contactConsent: d.contactConsent === true,
         ...(e164 ? { phone: e164 } : {}),
+        ...(howHeard ? { howHeard } : {}),
+        ...(d.pdpaTold === true ? { pdpaConsentAt: FieldValue.serverTimestamp() } : {}),
       });
     }
     tx.create(aRef, { meetingId: meeting.id, personId: pRef.id, date: meeting.date, method: 'scanner', byUid: user.uid, at: FieldValue.serverTimestamp() });

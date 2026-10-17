@@ -273,4 +273,13 @@ export const en: Record<MessageKey, string> = {
   "scan.noMeetingWhy": "Scanning and manual check-in appear once there is a meeting today. Sunday services appear automatically; open a meeting for groups or events.",
   "scan.openMeeting": "Open a meeting for today",
   "update.ready": "App updated. Tap to refresh",
+  "history.title": "Check-in history",
+  "history.hint": "Recent check-ins for you and your family.",
+  "history.open": "View check-in history",
+  "scan.tabScan": "Scan QR",
+  "scan.tabManual": "Manual",
+  "nav.home": "← Home",
+  "manual.contact": "They agree to be contacted by the church",
+  "manual.pdpaTold": "I told them the data is only for attendance and pastoral follow-up (PDPA)",
+  "manual.pdpaRequired": "With a phone number, tell them how it is used and tick the box",
 };

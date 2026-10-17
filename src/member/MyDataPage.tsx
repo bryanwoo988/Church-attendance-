@@ -1,34 +1,19 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthProvider';
-import { useGroups, useHousehold, useHouseholdAttendance, useMeetingsByIds } from '../api';
+import { useHousehold } from '../api';
 import { call } from '../firebase';
-import { useT, type MessageKey } from '../i18n';
-import { klTime } from '../../shared/dates';
-import type { Group, Meeting } from '../../shared/types';
+import { Link, useNavigate } from 'react-router';
+import { useT } from '../i18n';
 import ChangePhone from './ChangePhone';
-
-/** e.g. "主日 · 2026-10-18", "小组 · 青年小组 · 周五查经", "活动 · 圣诞晚会". */
-function meetingLabel(t: (k: MessageKey) => string, m: Meeting | undefined, groups: Group[], date: string): string {
-  if (!m) return date;
-  if (m.type === 'sunday') return `${t('rec.sunday')} · ${m.date}`;
-  if (m.type === 'event') return `${t('rec.event')} · ${m.title}`;
-  const group = groups.find((g) => g.id === m.groupId)?.name;
-  return [t('rec.group'), group, group !== m.title ? m.title : undefined].filter(Boolean).join(' · ');
-}
 
 export default function MyDataPage() {
   const { t } = useT();
   const { user, signOut } = useAuth();
   const nav = useNavigate();
   const family = useHousehold(user?.householdId) ?? [];
-  const attendance = useHouseholdAttendance(family.map((p) => p.id)) ?? [];
-  const meetings = useMeetingsByIds(attendance.map((a) => a.meetingId)) ?? [];
-  const groups = useGroups() ?? [];
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(false);
-  const nameOf = (id: string) => family.find((p) => p.id === id)?.name ?? '';
 
   async function del() {
     setBusy(true);
@@ -46,22 +31,7 @@ export default function MyDataPage() {
   return (
     <div>
       <h1>{t('mydata.title')}</h1>
-      <h2>{t('mydata.records')}</h2>
-      <div className="card">
-        {attendance.length === 0 ? <p className="muted">{t('mydata.noRecords')}</p> : (
-          <ul className="list">
-            {attendance.map((a) => (
-              <li key={a.meetingId + a.personId}>
-                <div>
-                  <div>{meetingLabel(t, meetings.find((m) => m.id === a.meetingId), groups, a.date)}</div>
-                  <div className="muted small">{nameOf(a.personId)} · {t(`method.${a.method}` as MessageKey)}</div>
-                </div>
-                <span className="muted small" style={{ whiteSpace: 'nowrap' }}>{`${a.date} ${klTime(a.at)}`}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <Link className="btn block" to="/history">{t('history.open')}</Link>
       <h2>{t('mydata.stored')}</h2>
       <p className="muted">{t('mydata.storedHint')}</p>
       {family.map((p) => (

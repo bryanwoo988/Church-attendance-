@@ -29,27 +29,6 @@ function renderPage(signOut = vi.fn().mockResolvedValue(undefined)) {
 }
 
 describe('MyDataPage', () => {
-  it('shows each record with meeting type, group or title, time and method', () => {
-    meetings = [
-      { id: 's1', type: 'sunday', title: '主日', date: '2026-10-18', checkinMode: 'always' },
-      { id: 'gm', type: 'group', title: '周五查经', date: '2026-10-16', groupId: 'g1', checkinMode: 'always' },
-      { id: 'ev', type: 'event', title: '圣诞晚会', date: '2026-12-24', checkinMode: 'always' },
-    ];
-    attendance = [
-      { meetingId: 's1', personId: 'p1', date: '2026-10-18', method: 'scanner', at: new Date('2026-10-18T01:05:00Z') },
-      { meetingId: 'gm', personId: 'p1', date: '2026-10-16', method: 'self', at: new Date('2026-10-16T12:30:00Z') },
-      { meetingId: 'ev', personId: 'p1', date: '2026-12-24', method: 'visitorForm', at: new Date('2026-12-24T11:00:00Z') },
-    ];
-    renderPage();
-    expect(screen.getByText(`${t('rec.sunday')} · 2026-10-18`)).toBeInTheDocument();
-    expect(screen.getByText(`${t('rec.group')} · 青年小组 · 周五查经`)).toBeInTheDocument();
-    expect(screen.getByText(`${t('rec.event')} · 圣诞晚会`)).toBeInTheDocument();
-    expect(screen.getByText('2026-10-18 09:05')).toBeInTheDocument();
-    expect(screen.getByText(`Mary · ${t('method.self')}`)).toBeInTheDocument();
-    attendance = [];
-    meetings = [];
-  });
-
   it('shows stored data and deletes only after typing DELETE', async () => {
     const signOut = vi.fn().mockResolvedValue(undefined);
     render(

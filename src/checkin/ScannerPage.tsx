@@ -105,17 +105,22 @@ export default function ScannerPage() {
         </select>
       )}
       {meeting && <p className="muted">{t('scan.recordingFor', { title: meeting.title })}</p>}
-      {meeting && (manual ? (
+      {meeting && (
+        <div className="chips" style={{ justifyContent: 'flex-start', marginBottom: 12 }}>
+          <button className={'chip' + (manual ? '' : ' on')} onClick={() => setManual(false)}>{t('scan.tabScan')}</button>
+          <button className={'chip' + (manual ? ' on' : '')} onClick={() => { setPicker(null); setManual(true); }}>{t('scan.tabManual')}</button>
+        </div>
+      )}
+      {meeting && manual ? (
         <ManualCheckin
           meetingId={meeting.id}
           onPick={(id, name) => record([id], [name])}
           onAdded={(name, status) => { setManual(false); show({ ...statusMsg([{ personId: '', status }]), names: [name] }); }}
           onClose={() => setManual(false)}
         />
-      ) : !picker && (
-        <button className="btn primary block" style={{ marginBottom: 12 }} onClick={() => setManual(true)}>{t('manual.open')}</button>
-      ))}
-      <CameraScanner onDecode={onDecode} paused={!!picker || manual} />
+      ) : (
+        <CameraScanner onDecode={onDecode} paused={!!picker} />
+      )}
       {feedback && (
         <div className={`card feedback ${feedback.kind}`} role="status">
           {feedback.names?.map((n) => <div key={n} className="qrname">{n}</div>)}

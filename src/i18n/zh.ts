@@ -272,5 +272,14 @@ export const zh = {
   "scan.noMeetingWhy": "扫码和「手动签到」要有今天的聚会才会出现。主日聚会会在当天自动出现；小组或活动要先开聚会。",
   "scan.openMeeting": "去开今天的聚会",
   "update.ready": "App 已更新，点这里刷新",
+  "history.title": "签到记录",
+  "history.hint": "你和家人最近的签到记录。",
+  "history.open": "查看签到记录",
+  "scan.tabScan": "扫 QR 码",
+  "scan.tabManual": "手动签到",
+  "nav.home": "← 主页",
+  "manual.contact": "对方同意教会联络他",
+  "manual.pdpaTold": "已告诉对方：资料只用于出席记录和联络关怀（PDPA）",
+  "manual.pdpaRequired": "填了电话，就要先告诉对方资料用途并打勾",
 };
 export type MessageKey = keyof typeof zh;

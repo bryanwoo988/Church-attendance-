@@ -10,7 +10,9 @@ const KNOWN: Record<string, MessageKey> = {
   'welcome.nameRequired': 'family.nameRequired',
   'welcome.invalidPhone': 'login.invalidPhone',
   'checkin.noMeeting': 'checkin.noMeeting',
+  'manual.pdpaRequired': 'manual.pdpaRequired',
 };
+const HOW: MessageKey[] = ['welcome.how.friend', 'welcome.how.family', 'welcome.how.online', 'welcome.how.passing', 'welcome.how.other'];
 
 /** Door scanner: find someone without their QR code, or add a newcomer, and check them in. */
 export default function ManualCheckin({ meetingId, onPick, onAdded, onClose }: {
@@ -24,6 +26,9 @@ export default function ManualCheckin({ meetingId, onPick, onAdded, onClose }: {
   const [q, setQ] = useState('');
   const [phone, setPhone] = useState('');
   const [kind, setKind] = useState<PersonKind>('adult');
+  const [how, setHow] = useState('');
+  const [contact, setContact] = useState(false);
+  const [told, setTold] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<MessageKey | null>(null);
 
@@ -38,11 +43,14 @@ export default function ManualCheckin({ meetingId, onPick, onAdded, onClose }: {
 
   async function add(e: FormEvent) {
     e.preventDefault();
-    setBusy(true);
     setError(null);
+    if (phone.trim() && !told) return setError('manual.pdpaRequired');
+    setBusy(true);
     const name = q.trim();
     try {
-      const res = await call<object, { status: 'ok' | 'already' }>('scannerAddVisitor', { meetingId, name, ...(phone.trim() ? { phone: phone.trim() } : {}), kind });
+      const res = await call<object, { status: 'ok' | 'already' }>('scannerAddVisitor', {
+        meetingId, name, ...(phone.trim() ? { phone: phone.trim() } : {}), kind, ...(how ? { howHeard: how } : {}), contactConsent: contact, pdpaTold: told,
+      });
       onAdded(name, res.status);
     } catch (err) {
       setError(KNOWN[errorKey(err) ?? ''] ?? 'common.error');
@@ -78,6 +86,14 @@ export default function ManualCheckin({ meetingId, onPick, onAdded, onClose }: {
             <label className="check"><input type="radio" name="m-kind" checked={kind === 'adult'} onChange={() => setKind('adult')} />{t('family.adult')}</label>
             <label className="check"><input type="radio" name="m-kind" checked={kind === 'child'} onChange={() => setKind('child')} />{t('family.child')}</label>
           </div>
+          <label htmlFor="m-how">{t('welcome.how')}</label>
+          <select id="m-how" value={how} onChange={(e) => setHow(e.target.value)}>
+            <option value="">—</option>
+            {HOW.map((k) => <option key={k} value={k}>{t(k)}</option>)}
+          </select>
+          <label className="check"><input type="checkbox" checked={contact} onChange={(e) => setContact(e.target.checked)} />{t('manual.contact')}</label>
+          <label className="check"><input type="checkbox" checked={told} onChange={(e) => setTold(e.target.checked)} />{t('manual.pdpaTold')}</label>
+          <p className="muted small">{t('welcome.pdpaText')}</p>
           {error && <p className="err" role="alert">{t(error)}</p>}
           <button className="btn primary block" style={{ marginTop: 10 }} disabled={busy}>{t('manual.add')}</button>
         </form>
