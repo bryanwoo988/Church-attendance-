@@ -59,4 +59,11 @@ describe('LoginPage', () => {
     await sendTo('011-4001 5077');
     expect(await screen.findByText(/functions\/internal/)).toBeInTheDocument();
   });
+
+  it('shows the Twilio error code when the provider refuses to send', async () => {
+    call.mockRejectedValue({ code: 'functions/failed-precondition', message: 'login.sendFailed', details: { twilio: 21408 } });
+    await sendTo('012-848 9771');
+    expect(await screen.findByText(t('login.sendFailed'))).toBeInTheDocument();
+    expect(screen.getByText(/Twilio 21408/)).toBeInTheDocument();
+  });
 });

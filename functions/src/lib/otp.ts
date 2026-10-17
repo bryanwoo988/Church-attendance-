@@ -53,7 +53,8 @@ function sendError(status: number, body: any): HttpsError {
   if (code === 60200 || code === 21211 || code === 21614) return new HttpsError('invalid-argument', 'login.invalidPhone');
   if (code === 60410 || code === 60605) return new HttpsError('permission-denied', 'login.blocked');
   console.error('twilio send failed', status, code, body?.message);
-  return new HttpsError('unavailable', 'login.sendFailed');
+  // Not 'unavailable': a 503 can lose its body on the way, hiding the reason. The Twilio code goes to the screen.
+  return new HttpsError('failed-precondition', 'login.sendFailed', { twilio: code || status });
 }
 
 export async function sendCode(e164: string): Promise<void> {
@@ -82,7 +83,7 @@ export async function checkCode(e164: string, rawCode: unknown): Promise<void> {
   }
   if (r.status >= 300) {
     console.error('twilio check failed', r.status, r.body?.code, r.body?.message);
-    throw new HttpsError('unavailable', 'login.sendFailed');
+    throw new HttpsError('failed-precondition', 'login.sendFailed', { twilio: Number(r.body?.code) || r.status });
   }
   if (r.body?.status !== 'approved') throw new HttpsError('invalid-argument', 'login.wrongCode');
 }

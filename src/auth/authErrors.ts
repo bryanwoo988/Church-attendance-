@@ -18,6 +18,8 @@ export function authErrorKey(e: unknown): MessageKey {
 
 /** Code to show next to a generic message so problems can be diagnosed from a screenshot. */
 export function detailFor(key: MessageKey, e: unknown): string | null {
+  const twilio = (e as { details?: { twilio?: unknown } })?.details?.twilio;
+  if (twilio) return `Twilio ${twilio}`;
   const code = errorCode(e) || (e as { message?: string })?.message || '';
   return key === 'common.error' && code ? code : null;
 }
