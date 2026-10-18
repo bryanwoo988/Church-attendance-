@@ -137,3 +137,18 @@ test('newcomer form works without login', async ({ page }) => {
   await page.getByRole('button', { name: '提交' }).click();
   await expect(page.getByText('这是你第 1 次来')).toBeVisible();
 });
+
+test("a phone-camera scan of someone's personal code opens login, then home", async ({ page }) => {
+  await page.goto('/p/someMember123');
+  await page.getByRole('button', { name: '中文' }).click(); // first visit asks for a language
+  await expect(page).toHaveURL(/\/login\?next=%2Fp%2FsomeMember123$/);
+  await page.getByLabel('电话号码').fill('019-888 7777');
+  await page.getByRole('button', { name: '发送验证码' }).click();
+  await page.getByLabel('验证码').fill(FAKE_CODE);
+  await page.getByRole('button', { name: '登录' }).click();
+  await expect(page.getByLabel('名字')).toBeVisible({ timeout: 15_000 });
+  await page.getByLabel('名字').fill('New Friend');
+  await page.getByRole('button', { name: '继续' }).click();
+  await expect(page.getByText('我的身份')).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+});

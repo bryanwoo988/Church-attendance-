@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, Navigate } from 'react-router';
 import App from './App';
 import LoginPage from './auth/LoginPage';
 import { RequireAuth, RequireRole } from './auth/RequireRole';
@@ -31,6 +31,8 @@ export const router = createBrowserRouter([
       { path: 'history', element: <RequireAuth><HistoryPage /></RequireAuth> },
       { path: 'me', element: <RequireAuth><MyDataPage /></RequireAuth> },
       { path: 'login', element: <LoginPage /> },
+      // Personal QR codes are links here: a camera scan opens the app (login for newcomers), then home.
+      { path: 'p/:id', element: <RequireAuth><Navigate to="/" replace /></RequireAuth> },
       { path: 'welcome', element: <WelcomePage /> },
       { path: 'admin/people', element: <RequireRole any={['admin']}><PeoplePage /></RequireRole> },
       { path: 'admin/meetings', element: <RequireRole any={['admin', 'leader']}><MeetingsPage /></RequireRole> },

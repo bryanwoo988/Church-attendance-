@@ -4,10 +4,8 @@ import { useT } from '../i18n';
 import { useSettings } from '../api';
 import { parsePosterUrl } from '../../shared/poster';
 import CameraScanner from './CameraScanner';
+import { APP_ORIGINS } from '../util/origins';
 
-const project = import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined;
-// Posters may have been printed from either Firebase Hosting domain.
-const ORIGINS = [window.location.origin, ...(project ? [`https://${project}.web.app`, `https://${project}.firebaseapp.com`] : [])];
 
 /** Member scans the door poster inside the app, then lands on the normal self check-in. */
 export default function ScanPosterPage() {
@@ -17,7 +15,7 @@ export default function ScanPosterPage() {
   const settings = useSettings();
 
   function onDecode(text: string) {
-    const route = parsePosterUrl(text, ORIGINS);
+    const route = parsePosterUrl(text, APP_ORIGINS);
     if (route) nav(route, { replace: true });
     else setBad(true);
   }

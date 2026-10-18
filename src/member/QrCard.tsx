@@ -87,7 +87,7 @@ export default function QrCard({ personId, name, caption }: { personId: string; 
   const { t } = useT();
   const canvas = useRef<HTMLCanvasElement>(null);
   const [open, setOpen] = useState(false);
-  const payload = personalQrPayload(personId);
+  const payload = personalQrPayload(personId, window.location.origin);
 
   useEffect(() => {
     if (canvas.current) {

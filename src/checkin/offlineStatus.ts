@@ -2,6 +2,7 @@ import { doc, getDoc, getDocFromCache, serverTimestamp, setDoc, type DocumentSna
 import { db } from '../firebase';
 import { attendanceId } from '../../shared/checkin';
 import { parsePersonalQr } from '../../shared/qr';
+import { APP_ORIGINS } from '../util/origins';
 import { settleWithin, SERVER_WAIT_MS } from '../util/settle';
 
 export type ScanStatus = 'ok' | 'already' | 'queued';
@@ -54,7 +55,7 @@ export function makeScanGate(windowMs: number) {
     if (text === lastText && now - lastAt < windowMs) return 'ignore';
     lastText = text;
     lastAt = now;
-    const personId = parsePersonalQr(text);
+    const personId = parsePersonalQr(text, APP_ORIGINS);
     return personId ? { personId } : 'notChurch';
   };
 }

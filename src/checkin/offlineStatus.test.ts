@@ -70,6 +70,11 @@ describe('makeScanGate', () => {
     expect(gate('cqr:p:abc', 2000)).toBe('ignore');
     expect(gate('cqr:p:abc', 3500)).toEqual({ personId: 'abc' });
   });
+  it('reads the link form of a personal code', () => {
+    const gate = makeScanGate(3000);
+    expect(gate(`${window.location.origin}/p/abc`, 0)).toEqual({ personId: 'abc' });
+    expect(gate('https://evil.example/p/abc', 10_000)).toBe('notChurch');
+  });
   it('flags non-church QR codes once', () => {
     const gate = makeScanGate(3000);
     expect(gate('https://shop.example', 0)).toBe('notChurch');
