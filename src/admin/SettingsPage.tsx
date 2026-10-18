@@ -1,5 +1,7 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
 import { saveSettings, useSettings } from '../api';
+import AsyncButton from '../ui/AsyncButton';
+import { toast, toastError } from '../ui/toast';
 import { useT, type MessageKey } from '../i18n';
 import { DEFAULT_SETTINGS, type CheckinMode } from '../../shared/types';
 
@@ -44,13 +46,15 @@ export default function SettingsPage() {
     setOtpLimit(String(settings.otpPerPhonePerDay ?? DEFAULT_SETTINGS.otpPerPhonePerDay));
   }, [settings]);
 
+  /** Save, then confirm with a banner; failures show the error banner and re-throw so the button resets. */
   async function run(fn: () => Promise<void>) {
     setMsg(null);
     try {
       await fn();
-      setMsg({ kind: 'ok', key: 'common.saved' });
-    } catch {
-      setMsg({ kind: 'err', key: 'common.error' });
+      toast({ kind: 'ok', title: t('ui.savedTitle'), body: t('settings.savedBody') });
+    } catch (e) {
+      toastError();
+      throw e;
     }
   }
 
@@ -67,13 +71,13 @@ export default function SettingsPage() {
       return setMsg({ kind: 'err', key: 'settings.notImage' });
     }
     if (url.length > MAX_DATA_URL) return setMsg({ kind: 'err', key: 'settings.fileTooLarge' });
-    await run(() => saveSettings({ paymentQrDataUrl: url }));
+    await run(() => saveSettings({ paymentQrDataUrl: url })).catch(() => {});
   }
 
   return (
     <div>
       <h1>{t('home.settings')}</h1>
-      {msg && <p className={`card ${msg.kind}`} role="status">{t(msg.key)}</p>}
+      {msg && <p className={msg.kind} role="alert">{t(msg.key)}</p>}
       <div className="card">
         <h2>{t('settings.qrTitle')}</h2>
         {settings?.paymentQrDataUrl && <img className="payqr" src={settings.paymentQrDataUrl} alt={t('offering.qrAlt')} />}
@@ -91,7 +95,7 @@ export default function SettingsPage() {
             onChange={(e) => {
               const on = e.target.checked;
               setSelfCheckin(on);
-              run(() => saveSettings({ selfCheckin: on }));
+              run(() => saveSettings({ selfCheckin: on })).catch(() => setSelfCheckin(!on));
             }}
           />
           {t('settings.selfOn')}
@@ -109,27 +113,27 @@ export default function SettingsPage() {
         </div>
         <label className="check"><input type="radio" name="smode" checked={mode === 'window'} onChange={() => setMode('window')} />{t('meeting.modeWindow')}</label>
         <label className="check"><input type="radio" name="smode" checked={mode === 'always'} onChange={() => setMode('always')} />{t('meeting.modeAlways')}</label>
-        <button className="btn primary block" style={{ marginTop: 10 }} onClick={() => run(() => saveSettings({ sunday: { weekday, start, end, checkinMode: mode } }))}>
+        <AsyncButton style={{ marginTop: 10 }} onClick={() => run(() => saveSettings({ sunday: { weekday, start, end, checkinMode: mode } }))}>
           {t('settings.saveSunday')}
-        </button>
+        </AsyncButton>
       </div>
       <div className="card">
         <h2>{t('settings.otpTitle')}</h2>
         <p className="muted">{t('settings.otpHint')}</p>
         <label htmlFor="otp-limit">{t('settings.otpLimit')}</label>
         <input id="otp-limit" type="number" min={1} max={100} value={otpLimit} onChange={(e) => setOtpLimit(e.target.value)} />
-        <button id="otp-save" className="btn primary block" style={{ marginTop: 10 }}
+        <AsyncButton id="otp-save" style={{ marginTop: 10 }}
           onClick={() => run(() => saveSettings({ otpPerPhonePerDay: Math.min(100, Math.max(1, Math.round(Number(otpLimit)) || 30)) }))}>
           {t('common.save')}
-        </button>
+        </AsyncButton>
       </div>
       <div className="card">
         <h2>{t('settings.catTitle')}</h2>
         <label htmlFor="s-cats">{t('settings.catHint')}</label>
         <textarea id="s-cats" rows={4} value={cats} onChange={(e) => setCats(e.target.value)} />
-        <button className="btn primary block" style={{ marginTop: 10 }} onClick={() => run(() => saveSettings({ offeringCategories: cats.split('\n').map((c) => c.trim()).filter(Boolean).slice(0, 20) }))}>
+        <AsyncButton style={{ marginTop: 10 }} onClick={() => run(() => saveSettings({ offeringCategories: cats.split('\n').map((c) => c.trim()).filter(Boolean).slice(0, 20) }))}>
           {t('common.save')}
-        </button>
+        </AsyncButton>
       </div>
     </div>
   );

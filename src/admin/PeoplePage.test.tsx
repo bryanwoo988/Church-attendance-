@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Person } from '../../shared/types';
 
@@ -13,6 +13,7 @@ vi.mock('../api', () => ({
 vi.mock('../firebase', () => ({ call: (...a: unknown[]) => call(...a) }));
 
 import PersonEditor from './PersonEditor';
+import ConfirmHost from '../ui/ConfirmHost';
 import { t, setLang } from '../i18n';
 
 const base: Person = { id: 'p1', name: 'Mary', householdId: 'h1', kind: 'adult', status: 'member', active: true, visitCount: 3, createdAt: new Date() };
@@ -33,15 +34,16 @@ describe('PersonEditor', () => {
     expect(screen.getByText(t('person.noAccount'))).toBeInTheDocument();
   });
 
-  it('merges only after confirmation', async () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
-    render(<PersonEditor person={other} roles={[]} people={[base, other]} onClose={() => {}} />);
+  it('merges only after confirmation in the app (not the browser dialog)', async () => {
+    render(<><PersonEditor person={other} roles={[]} people={[base, other]} onClose={() => {}} /><ConfirmHost /></>);
     await userEvent.selectOptions(screen.getByLabelText(t('person.mergeInto')), 'p1');
     await userEvent.click(screen.getByRole('button', { name: t('person.merge') }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: t('common.cancel') }));
     expect(call).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: t('person.merge') }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: t('person.merge') }));
     expect(call).toHaveBeenCalledWith('mergePeople', { fromPersonId: 'p2', intoPersonId: 'p1' });
-    confirmSpy.mockRestore();
   });
 
   it('changes status', async () => {

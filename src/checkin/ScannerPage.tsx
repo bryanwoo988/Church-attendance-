@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
+import { CircleCheck, CircleX, TriangleAlert } from 'lucide-react';
+import { haptic } from '../ui/haptic';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthProvider';
 import { fetchPersonWithFamily, useGroups, useMeetingsOn } from '../api';
@@ -20,6 +22,11 @@ const statusMsg = (res: ScanResult[]): Feedback => {
   const at = res.find((r) => r.at)?.at;
   return at ? { kind: 'warn', msg: 'scan.alreadyAt', time: klTime(at) } : { kind: 'warn', msg: 'scan.already' };
 };
+
+function FeedbackIcon({ kind }: { kind: Feedback['kind'] }) {
+  const Icon = kind === 'ok' ? CircleCheck : kind === 'warn' ? TriangleAlert : CircleX;
+  return <Icon size={48} className={'big-icon ' + kind} aria-hidden />;
+}
 
 export default function ScannerPage() {
   const { t } = useT();
@@ -46,6 +53,8 @@ export default function ScannerPage() {
   const clearTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   function show(f: Feedback) {
+    // Different buzz per result so the door scanner can tell without looking (Android only).
+    haptic(f.kind === 'ok' ? 40 : f.kind === 'warn' ? [30, 80, 30] : [120]);
     setFeedback(f);
     clearTimeout(clearTimer.current);
     clearTimer.current = setTimeout(() => setFeedback(null), 2500);
@@ -124,6 +133,7 @@ export default function ScannerPage() {
       )}
       {feedback && (
         <div className={`card feedback ${feedback.kind}`} role="status">
+          <FeedbackIcon kind={feedback.kind} />
           {feedback.names?.map((n) => <div key={n} className="qrname">{n}</div>)}
           <div className={feedback.kind}>{t(feedback.msg, { time: feedback.time ?? '' })}</div>
         </div>

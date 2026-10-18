@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from 'react';
+import { toast, toastError } from '../ui/toast';
+import { LoaderCircle } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthProvider';
 import { createMeeting, useGroups, useMeetingsBetween } from '../api';
@@ -45,10 +47,10 @@ export default function MeetingsPage() {
         windowStart: mode === 'window' ? klDateTime(date, start) : undefined,
         windowEnd: mode === 'window' ? klDateTime(date, end) : undefined,
       });
+      toast({ kind: 'ok', title: t('meeting.created'), body: t('meeting.createdBody', { title: title.trim() }) });
       setTitle('');
-      setMsg({ kind: 'ok', key: 'meeting.created' });
     } catch {
-      setMsg({ kind: 'err', key: 'common.error' });
+      toastError();
     } finally {
       setBusy(false);
     }
@@ -57,9 +59,9 @@ export default function MeetingsPage() {
   async function sundayNow() {
     try {
       await call('createSundayNow', {});
-      setMsg({ kind: 'ok', key: 'meeting.created' });
+      toast({ kind: 'ok', title: t('meeting.created') });
     } catch {
-      setMsg({ kind: 'err', key: 'common.error' });
+      toastError();
     }
   }
 
@@ -101,8 +103,10 @@ export default function MeetingsPage() {
             <div><label htmlFor="mt-end">{t('meeting.end')}</label><input id="mt-end" type="time" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
           </div>
         )}
-        {msg && <p className={msg.kind} role="status">{t(msg.key)}</p>}
-        <button className="btn primary block" style={{ marginTop: 12 }} disabled={busy}>{t('meeting.create')}</button>
+        {msg && <p className={msg.kind} role="alert">{t(msg.key)}</p>}
+        <button className="btn primary block" style={{ marginTop: 12 }} disabled={busy}>
+          {busy ? <><LoaderCircle size={20} className="spin" aria-hidden />{t('ui.working')}</> : t('meeting.create')}
+        </button>
       </form>
       <h2>{t('meeting.list')}</h2>
       <ul className="list card">

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { auth, call } from '../firebase';
 import { useT, type MessageKey } from '../i18n';
+import { toast } from '../ui/toast';
 import { normalizeMyPhone } from '../../shared/phone';
 import { authErrorKey, detailFor } from '../auth/authErrors';
 
@@ -49,6 +50,7 @@ export default function ChangePhone({ current }: { current?: string }) {
       const r = await call<object, { phone: string }>('confirmPhoneChange', { phone: sentTo, code: code.trim() });
       await auth.currentUser?.getIdToken(true); // pick up the new number in this session
       setDone(r.phone);
+      toast({ kind: 'ok', title: t('phone.doneTitle') });
     } catch (err) {
       fail(err);
     } finally {

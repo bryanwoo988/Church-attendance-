@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { usePeople, useOfferingsBetween, useSettings } from '../api';
 import { call } from '../firebase';
+import { confirmSheet } from '../ui/confirm';
 import { useT, type MessageKey } from '../i18n';
 import { klDate } from '../../shared/dates';
 import { formatSen, parseAmountToSen } from '../../shared/money';
@@ -33,7 +34,7 @@ export default function OfferingsPage() {
   }
 
   async function remove(id: string) {
-    if (!confirm(t('offering.deleteConfirm'))) return;
+    if (!(await confirmSheet({ title: t('offering.deleteConfirm'), confirmLabel: t('offering.delete'), danger: true }))) return;
     try {
       await call('financeEditOffering', { offeringId: id, delete: true });
     } catch {

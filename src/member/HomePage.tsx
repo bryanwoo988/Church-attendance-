@@ -4,8 +4,17 @@ import { useAuth } from '../auth/AuthProvider';
 import { useHousehold, useHouseholdDoc, useSettings } from '../api';
 import { klDate } from '../../shared/dates';
 import { useT } from '../i18n';
+import {
+  BarChart3, CalendarDays, ClipboardList, Download, HandCoins, History, LogOut, Printer, ScanLine, ScanQrCode,
+  Settings, UserCog, UserPlus, Users, UsersRound, Wallet,
+} from 'lucide-react';
+import type { ReactNode } from 'react';
 import QrCard from './QrCard';
 import MyRoles from './MyRoles';
+
+function Tile({ to, icon, label, primary }: { to: string; icon: ReactNode; label: string; primary?: boolean }) {
+  return <Link className={'tile' + (primary ? ' primary' : '')} to={to}>{icon}<span>{label}</span></Link>;
+}
 
 export default function HomePage() {
   const { t } = useT();
@@ -41,32 +50,32 @@ export default function HomePage() {
           ? <p className="ok">{t('family.todaySaved', { names: todayNames })} <Link to="/family">{t('family.edit')}</Link></p>
           : <Link className="btn block" to="/family" style={{ marginTop: 8 }}>{t('home.todaySet')}</Link>)}
       </div>
-      <div className="grid2">
-        <Link className="btn primary" to="/history">{t('history.title')}</Link>
-        {settings?.selfCheckin && <Link className="btn primary" to="/scan-poster">{t('home.checkin')}</Link>}
-        <Link className="btn primary" to="/offering">{t('home.offering')}</Link>
-        <Link className="btn" to="/family">{t('family.title')}</Link>
-        <Link className="btn" to="/me">{t('mydata.title')}</Link>
+      <div className="tiles">
+        <Tile to="/history" icon={<History size={26} aria-hidden />} label={t('history.title')} primary />
+        {settings?.selfCheckin && <Tile to="/scan-poster" icon={<ScanQrCode size={26} aria-hidden />} label={t('home.checkin')} primary />}
+        <Tile to="/offering" icon={<HandCoins size={26} aria-hidden />} label={t('home.offering')} primary />
+        <Tile to="/family" icon={<Users size={26} aria-hidden />} label={t('family.title')} />
+        <Tile to="/me" icon={<UserCog size={26} aria-hidden />} label={t('mydata.title')} />
       </div>
       <MyRoles roles={roles} status={person?.status} />
       {(has('scanner') || has('leader') || has('admin') || has('finance')) && (
         <>
-          <h2>{t('home.staff')}</h2>
-          <div className="grid2">
-            {(has('scanner') || has('leader') || has('admin')) && <Link className="btn" to="/scan">{t('home.scan')}</Link>}
-            {(has('leader') || has('admin')) && <Link className="btn" to="/admin/meetings">{t('home.meetings')}</Link>}
-            {has('admin') && <Link className="btn" to="/admin/people">{t('home.people')}</Link>}
-            {has('admin') && <Link className="btn" to="/admin/newcomers">{t('home.newcomers')}</Link>}
-            {(has('admin') || has('leader')) && <Link className="btn" to="/admin/groups">{t('home.groups')}</Link>}
-            {(has('admin') || has('leader')) && <Link className="btn" to="/leader/attendance">{t('home.groupAtt')}</Link>}
-            {has('admin') && <Link className="btn" to="/admin/posters">{t('home.posters')}</Link>}
-            {has('admin') && <Link className="btn" to="/admin/settings">{t('home.settings')}</Link>}
-            {(has('finance') || has('admin')) && <Link className="btn" to="/finance/offerings">{t('home.finance')}</Link>}
-            {(has('finance') || has('admin')) && <Link className="btn" to="/finance/export">{t('home.export')}</Link>}
+          <div className="section-title">{t('home.staff')}</div>
+          <div className="tiles">
+            {(has('scanner') || has('leader') || has('admin')) && <Tile to="/scan" icon={<ScanLine size={26} aria-hidden />} label={t('home.scan')} primary />}
+            {(has('leader') || has('admin')) && <Tile to="/admin/meetings" icon={<CalendarDays size={26} aria-hidden />} label={t('home.meetings')} />}
+            {has('admin') && <Tile to="/admin/people" icon={<UsersRound size={26} aria-hidden />} label={t('home.people')} />}
+            {has('admin') && <Tile to="/admin/newcomers" icon={<UserPlus size={26} aria-hidden />} label={t('home.newcomers')} />}
+            {(has('admin') || has('leader')) && <Tile to="/admin/groups" icon={<ClipboardList size={26} aria-hidden />} label={t('home.groups')} />}
+            {(has('admin') || has('leader')) && <Tile to="/leader/attendance" icon={<BarChart3 size={26} aria-hidden />} label={t('home.groupAtt')} />}
+            {has('admin') && <Tile to="/admin/posters" icon={<Printer size={26} aria-hidden />} label={t('home.posters')} />}
+            {has('admin') && <Tile to="/admin/settings" icon={<Settings size={26} aria-hidden />} label={t('home.settings')} />}
+            {(has('finance') || has('admin')) && <Tile to="/finance/offerings" icon={<Wallet size={26} aria-hidden />} label={t('home.finance')} />}
+            {(has('finance') || has('admin')) && <Tile to="/finance/export" icon={<Download size={26} aria-hidden />} label={t('home.export')} />}
           </div>
         </>
       )}
-      <button className="btn block" style={{ marginTop: 24 }} onClick={signOut}>{t('home.signOut')}</button>
+      <button className="btn block" style={{ marginTop: 24 }} onClick={signOut}><LogOut size={20} aria-hidden />{t('home.signOut')}</button>
     </div>
   );
 }

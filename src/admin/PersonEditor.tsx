@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { toast, toastError } from '../ui/toast';
+import { LoaderCircle } from 'lucide-react';
 import { setRoles, updatePerson } from '../api';
 import { call } from '../firebase';
+import { confirmSheet } from '../ui/confirm';
 import { useT, type MessageKey } from '../i18n';
 import { normalizeMyPhone } from '../../shared/phone';
 import type { Person, PersonKind, PersonStatus, Role } from '../../shared/types';
@@ -30,9 +33,9 @@ export default function PersonEditor({ person, roles, people, onClose }: { perso
     setBusy(true);
     try {
       await updatePerson(person.id, { name: name.trim() || person.name, kind, status, ...(phoneE164 && !person.accountUid ? { phone: phoneE164 } : {}) });
-      setMsg({ kind: 'ok', key: 'common.saved' });
+      toast({ kind: 'ok', title: t('ui.savedTitle'), body: t('person.savedBody', { name: name.trim() || person.name }) });
     } catch {
-      setMsg({ kind: 'err', key: 'common.error' });
+      toastError();
     } finally {
       setBusy(false);
     }
@@ -46,14 +49,14 @@ export default function PersonEditor({ person, roles, people, onClose }: { perso
       await setRoles(person.accountUid, next);
     } catch {
       setCurrent(current);
-      setMsg({ kind: 'err', key: 'common.error' });
+      toastError();
     }
   }
 
   async function merge() {
     const target = people.find((p) => p.id === mergeInto);
     if (!target) return;
-    if (!confirm(t('person.mergeConfirm', { from: person.name, into: target.name }))) return;
+    if (!(await confirmSheet({ title: t('person.mergeConfirm', { from: person.name, into: target.name }), confirmLabel: t('person.merge') }))) return;
     setBusy(true);
     try {
       await call('mergePeople', { fromPersonId: person.id, intoPersonId: target.id });
@@ -65,7 +68,7 @@ export default function PersonEditor({ person, roles, people, onClose }: { perso
   }
 
   async function erase() {
-    if (!confirm(t('person.deleteConfirm', { name: person.name }))) return;
+    if (!(await confirmSheet({ title: t('person.deleteConfirm', { name: person.name }), confirmLabel: t('person.delete'), danger: true }))) return;
     setBusy(true);
     try {
       await call('deletePersonData', { personId: person.id });
@@ -93,8 +96,10 @@ export default function PersonEditor({ person, roles, people, onClose }: { perso
       <select id="pe-status" value={status} onChange={(e) => setStatus(e.target.value as PersonStatus)}>
         {STATUSES.map((s) => <option key={s} value={s}>{t(`status.${s}` as MessageKey)}</option>)}
       </select>
-      {msg && <p className={msg.kind} role="status">{t(msg.key)}</p>}
-      <button className="btn primary block" style={{ marginTop: 12 }} disabled={busy} onClick={save}>{t('common.save')}</button>
+      {msg && <p className={msg.kind} role="alert">{t(msg.key)}</p>}
+      <button className="btn primary block" style={{ marginTop: 12 }} disabled={busy} onClick={save}>
+        {busy ? <><LoaderCircle size={20} className="spin" aria-hidden />{t('ui.working')}</> : t('common.save')}
+      </button>
 
       <h2>{t('person.roles')}</h2>
       {person.accountUid ? (
@@ -120,7 +125,7 @@ export default function PersonEditor({ person, roles, people, onClose }: { perso
       <button className="btn block" style={{ marginTop: 8 }} disabled={!mergeInto || busy} onClick={merge}>{t('person.merge')}</button>
 
       {!person.accountUid && (
-        <button className="btn block" style={{ marginTop: 16, color: 'var(--err)' }} disabled={busy} onClick={erase}>{t('person.delete')}</button>
+        <button className="btn block" style={{ marginTop: 16, color: 'var(--err)', borderColor: 'var(--err)' }} disabled={busy} onClick={erase}>{t('person.delete')}</button>
       )}
       <button className="btn block" style={{ marginTop: 8 }} onClick={onClose}>{t('common.close')}</button>
     </div>

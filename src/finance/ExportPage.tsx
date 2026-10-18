@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { toast, toastError } from '../ui/toast';
+import { Download, LoaderCircle } from 'lucide-react';
 import { fetchExportData } from '../api';
 import { useT, type MessageKey } from '../i18n';
 import { klDate } from '../../shared/dates';
@@ -20,9 +22,9 @@ export default function ExportPage() {
     try {
       const data = await fetchExportData(from, to);
       await downloadXlsx(buildExportSheets({ ...data, from, to }), `church-${from}_${to}.xlsx`);
-      setMsg({ kind: 'ok', key: 'export.done' });
+      toast({ kind: 'ok', title: t('export.done'), body: t('export.doneBody') });
     } catch {
-      setMsg({ kind: 'err', key: 'common.error' });
+      toastError();
     } finally {
       setBusy(false);
     }
@@ -37,8 +39,10 @@ export default function ExportPage() {
           <div><label htmlFor="ex-to">{t('export.to')}</label><input id="ex-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
         </div>
         <p className="muted">{t('export.hint')}</p>
-        {msg && <p className={msg.kind} role="status">{t(msg.key)}</p>}
-        <button className="btn primary block" disabled={busy} onClick={run}>{busy ? t('common.loading') : t('export.download')}</button>
+        {msg && <p className={msg.kind} role="alert">{t(msg.key)}</p>}
+        <button className="btn primary block" disabled={busy} onClick={run}>
+          {busy ? <><LoaderCircle size={20} className="spin" aria-hidden />{t('ui.working')}</> : <><Download size={20} aria-hidden />{t('export.download')}</>}
+        </button>
       </div>
     </div>
   );

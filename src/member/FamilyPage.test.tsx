@@ -21,6 +21,7 @@ vi.mock('qrcode', () => ({ default: { toCanvas: vi.fn().mockResolvedValue(undefi
 
 import { AuthContext } from '../auth/AuthProvider';
 import FamilyPage from './FamilyPage';
+import ConfirmHost from '../ui/ConfirmHost';
 import { t, setLang } from '../i18n';
 import { klDate } from '../../shared/dates';
 
@@ -80,12 +81,13 @@ describe('FamilyPage', () => {
   });
 
   it('removes a family member after an in-app confirmation', async () => {
+    render(<ConfirmHost />);
     renderPage();
     await userEvent.click(screen.getByRole('button', { name: `${t('family.edit')} Kid` }));
     await userEvent.click(screen.getByRole('button', { name: t('family.remove') }));
     expect(updateFamilyMember).not.toHaveBeenCalled();
-    expect(screen.getByText(t('family.removeConfirm', { name: 'Kid' }))).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: t('family.removeYes') }));
+    const sheet = screen.getByRole('dialog', { name: t('family.removeConfirm', { name: 'Kid' }) });
+    await userEvent.click(within(sheet).getByRole('button', { name: t('family.removeYes') }));
     expect(updateFamilyMember).toHaveBeenCalledWith('p2', { active: false });
   });
 

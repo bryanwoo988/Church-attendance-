@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { deleteOwnOffering, updateOwnOffering } from '../api';
+import { confirmSheet } from '../ui/confirm';
+import { toast } from '../ui/toast';
 import { useT, type MessageKey } from '../i18n';
 import { formatSen, parseAmountToSen } from '../../shared/money';
 import type { Offering } from '../../shared/types';
@@ -53,7 +55,14 @@ export default function MyOfferings({ offerings, categories }: { offerings: Offe
                     <button className="btn" onClick={() => { setEditing(o.id); setAmount((o.amountSen / 100).toFixed(2)); setCategory(o.category); setError(null); }}>
                       {t('offering.edit')}
                     </button>
-                    <button className="btn" onClick={() => confirm(t('offering.deleteConfirm')) && deleteOwnOffering(o.id)}>{t('offering.delete')}</button>
+                    <button className="btn" onClick={async () => {
+                      if (!(await confirmSheet({ title: t('offering.deleteConfirm'), confirmLabel: t('offering.delete'), danger: true }))) return;
+                      try {
+                        await deleteOwnOffering(o.id);
+                      } catch {
+                        toast({ kind: 'err', title: t('ui.errorTitle'), body: t('ui.errorBody') });
+                      }
+                    }}>{t('offering.delete')}</button>
                   </>
                 )}
               </span>

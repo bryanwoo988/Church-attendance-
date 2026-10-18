@@ -1,4 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { LoaderCircle, Trash2 } from 'lucide-react';
+import { confirmSheet } from '../ui/confirm';
+import { toast } from '../ui/toast';
 import { useAuth } from '../auth/AuthProvider';
 import { addFamilyMember, saveHousehold, updateFamilyMember, useHousehold, useHouseholdDoc } from '../api';
 import { useT, type MessageKey } from '../i18n';
@@ -14,15 +17,15 @@ function MemberEditor({ p, isSelf, onDone }: { p: Person; isSelf: boolean; onDon
   const [name, setName] = useState(p.name);
   const [kind, setKind] = useState<PersonKind>(p.kind);
   const [needQr, setNeedQr] = useState(!p.noQr);
-  const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<MessageKey | null>(null);
 
-  async function run(patch: Parameters<typeof updateFamilyMember>[1]) {
+  async function run(patch: Parameters<typeof updateFamilyMember>[1], done: { title: string; body: string }) {
     setBusy(true);
     setError(null);
     try {
       await updateFamilyMember(p.id, patch);
+      toast({ kind: 'ok', ...done });
       onDone();
     } catch {
       setError('common.error');
@@ -33,7 +36,12 @@ function MemberEditor({ p, isSelf, onDone }: { p: Person; isSelf: boolean; onDon
   function save(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return setError('family.nameRequired');
-    run({ name: name.trim(), kind, noQr: !needQr });
+    run({ name: name.trim(), kind, noQr: !needQr }, { title: t('ui.savedTitle'), body: t('family.savedBody', { name: name.trim() }) });
+  }
+
+  async function remove() {
+    const ok = await confirmSheet({ title: t('family.removeConfirm', { name: p.name }), body: t('family.removeHint'), confirmLabel: t('family.removeYes'), danger: true });
+    if (ok) run({ active: false }, { title: t('family.removedTitle'), body: t('family.removedBody', { name: p.name }) });
   }
 
   return (
@@ -49,21 +57,14 @@ function MemberEditor({ p, isSelf, onDone }: { p: Person; isSelf: boolean; onDon
       )}
       {error && <p className="err" role="alert">{t(error)}</p>}
       <div className="grid2" style={{ marginTop: 12 }}>
-        <button className="btn primary" disabled={busy}>{t('family.save')}</button>
+        <button className="btn primary" disabled={busy}>{busy ? <><LoaderCircle size={20} className="spin" aria-hidden />{t('ui.working')}</> : t('family.save')}</button>
         <button type="button" className="btn" onClick={onDone}>{t('common.cancel')}</button>
       </div>
-      {!isSelf && (asking ? (
-        <div style={{ marginTop: 12 }}>
-          <p className="warn">{t('family.removeConfirm', { name: p.name })}</p>
-          <p className="muted small">{t('family.removeHint')}</p>
-          <div className="grid2">
-            <button type="button" className="btn" style={{ color: 'var(--err)' }} disabled={busy} onClick={() => run({ active: false })}>{t('family.removeYes')}</button>
-            <button type="button" className="btn" onClick={() => setAsking(false)}>{t('common.cancel')}</button>
-          </div>
-        </div>
-      ) : (
-        <button type="button" className="btn block" style={{ marginTop: 12, color: 'var(--err)' }} onClick={() => setAsking(true)}>{t('family.remove')}</button>
-      ))}
+      {!isSelf && (
+        <button type="button" className="btn block" style={{ marginTop: 12, color: 'var(--err)', borderColor: 'var(--err)' }} disabled={busy} onClick={remove}>
+          <Trash2 size={18} aria-hidden />{t('family.remove')}
+        </button>
+      )}
     </form>
   );
 }
@@ -99,11 +100,12 @@ function TodayCard({ householdId, family }: { householdId: string; family: Perso
   const pickedIds = family.filter((p) => picked.has(p.id)).map((p) => p.id);
   const names = (list: string[]) => list.map((id) => family.find((p) => p.id === id)?.name).filter(Boolean).join('、');
 
-  async function save(patch: Parameters<typeof saveHousehold>[1]) {
+  async function save(patch: Parameters<typeof saveHousehold>[1], done?: { title: string; body?: string }) {
     setBusy(true);
     setError(null);
     try {
       await saveHousehold(householdId, patch);
+      if (done) toast({ kind: 'ok', ...done });
     } catch {
       setError('common.error');
     } finally {
@@ -116,7 +118,7 @@ function TodayCard({ householdId, family }: { householdId: string; family: Perso
     if (!name || pickedIds.length === 0) return;
     if (presets.length >= MAX_PRESETS) return setError('family.presetFull');
     const next: FamilyPreset[] = [...presets, { name: name.slice(0, 40), personIds: pickedIds, ...(eachQr ? {} : { qr: false }) }];
-    await save({ presets: next });
+    await save({ presets: next }, { title: t('family.presetSavedTitle'), body: `${name} · ${names(pickedIds)}` });
     setPresetName('');
   }
 
@@ -145,7 +147,7 @@ function TodayCard({ householdId, family }: { householdId: string; family: Perso
       {savedToday.length > 0 && <p className="ok">{t('family.todaySaved', { names: names(savedToday) })}</p>}
       {error && <p className="err" role="alert">{t(error)}</p>}
       <div className="grid2" style={{ marginTop: 10 }}>
-        <button type="button" className="btn primary" disabled={busy || pickedIds.length === 0} onClick={() => save({ today: { date: today, personIds: pickedIds, qr: eachQr } })}>
+        <button type="button" className="btn primary" disabled={busy || pickedIds.length === 0} onClick={() => save({ today: { date: today, personIds: pickedIds, qr: eachQr } }, { title: t('family.todaySavedTitle'), body: t('family.todaySavedBody', { names: names(pickedIds) }) })}>
           {t('family.todaySave')}
         </button>
         {savedToday.length > 0 && (
@@ -200,6 +202,7 @@ export default function FamilyPage() {
     setBusy(true);
     try {
       await addFamilyMember({ householdId: user.householdId, name: name.trim(), kind, status: person.status, noQr: !needQr });
+      toast({ kind: 'ok', title: t('family.addedTitle'), body: t('family.addedBody', { name: name.trim() }) });
       setName('');
       setKind('');
       setNeedQr(true);
@@ -219,13 +222,16 @@ export default function FamilyPage() {
       <ul className="list card">
         {(family ?? []).map((p) => (
           <li key={p.id}>
-            <span>
-              {p.name}{p.id === person?.id && <span className="muted"> {t('family.you')}</span>} <span className="muted">· {t(p.kind === 'child' ? 'family.child' : 'family.adult')}</span>
-              {p.noQr && <span className="muted small"> · {t('family.noQrTag')}</span>}
+            <span className="row-main">
+              <span className="name">{p.name}</span>
+              <span className="muted small">
+                {p.id === person?.id && <>{t('family.you')} · </>}{t(p.kind === 'child' ? 'family.child' : 'family.adult')}
+                {p.noQr && <> · {t('family.noQrTag')}</>}
+              </span>
             </span>
-            <span style={{ display: 'flex', gap: 6 }}>
-              {!p.noQr && <button className="btn" onClick={() => setShowQr(showQr === p.id ? null : p.id)}>{t('family.showQr')}</button>}
-              <button className="btn" aria-label={`${t('family.edit')} ${p.name}`} onClick={() => setEditing(editing === p.id ? null : p.id)}>{t('family.edit')}</button>
+            <span className="row-actions">
+              {!p.noQr && <button className="btn sm" onClick={() => setShowQr(showQr === p.id ? null : p.id)}>{t('family.showQr')}</button>}
+              <button className="btn sm" aria-label={`${t('family.edit')} ${p.name}`} onClick={() => setEditing(editing === p.id ? null : p.id)}>{t('family.edit')}</button>
             </span>
           </li>
         ))}

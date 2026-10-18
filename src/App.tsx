@@ -2,6 +2,9 @@ import { Outlet, Link, useLocation } from 'react-router';
 import { useLangChosen, useT } from './i18n';
 import LanguagePicker from './i18n/LanguagePicker';
 import { useAppUpdated } from './util/useAppUpdated';
+import { ChevronLeft, Church } from 'lucide-react';
+import Toaster from './ui/Toaster';
+import ConfirmHost from './ui/ConfirmHost';
 import './app.css';
 
 export default function App() {
@@ -19,7 +22,9 @@ export default function App() {
   return (
     <div className="shell">
       <header className="topbar">
-        {atHome ? <Link to="/" className="brand">{t('app.title')}</Link> : <Link to="/" className="brand">{t('nav.home')}</Link>}
+        {atHome
+          ? <Link to="/" className="brand"><Church size={22} aria-hidden />{t('app.title')}</Link>
+          : <Link to="/" className="brand"><ChevronLeft size={22} aria-hidden />{t('nav.home')}</Link>}
         <button className="lang" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
           {t('lang.toggle')}
         </button>
@@ -30,6 +35,8 @@ export default function App() {
       <main className="content">
         <Outlet />
       </main>
+      <Toaster />
+      <ConfirmHost />
     </div>
   );
 }
