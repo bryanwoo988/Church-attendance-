@@ -12,3 +12,4 @@ playwright-report/
 .claude-flow/
 .secret.local
 functions/.secret.local
+*.tsbuildinfo
