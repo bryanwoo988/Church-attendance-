@@ -10,12 +10,22 @@ import './app.css';
 export default function App() {
   const { t, lang, setLang } = useT();
   const updated = useAppUpdated();
-  const atHome = useLocation().pathname === '/';
+  const path = useLocation().pathname;
+  const atHome = path === '/';
   const langChosen = useLangChosen();
   if (!langChosen) {
     return (
       <div className="shell">
         <main className="content"><LanguagePicker /></main>
+      </div>
+    );
+  }
+  if (path === '/login') {
+    // Full-screen sign-in with its own language switch; no top bar.
+    return (
+      <div className="shell">
+        <Outlet />
+        <Toaster />
       </div>
     );
   }

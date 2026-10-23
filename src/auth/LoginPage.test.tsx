@@ -8,7 +8,7 @@ vi.mock('firebase/auth', () => ({ signInWithCustomToken: (...a: unknown[]) => si
 const call = vi.fn();
 vi.mock('../firebase', () => ({ auth: {}, call: (...a: unknown[]) => call(...a) }));
 
-import LoginPage from './LoginPage';
+import LoginPage, { formatMyPhone } from './LoginPage';
 import { setLang, t } from '../i18n';
 
 beforeEach(() => {
@@ -23,11 +23,23 @@ async function sendTo(phone: string) {
   await userEvent.click(screen.getByRole('button', { name: t('login.sendCode') }));
 }
 
+describe('formatMyPhone', () => {
+  it('spaces numbers the Malaysian way', () => {
+    expect(formatMyPhone('+60123456789')).toBe('+60 12-345 6789');
+    expect(formatMyPhone('+601123456789')).toBe('+60 11-2345 6789');
+  });
+});
+
 describe('LoginPage', () => {
   it('shows an error for an invalid phone and does not send a code', async () => {
-    await sendTo('12345');
+    await sendTo('03-1234 5678'); // a landline
     expect(screen.getByText(t('login.invalidPhone'))).toBeInTheDocument();
     expect(call).not.toHaveBeenCalled();
+  });
+
+  it('accepts the number without its leading 0, since +60 is shown in front', async () => {
+    await sendTo('12-345 6789');
+    expect(call).toHaveBeenCalledWith('requestLoginCode', { phone: '+60123456789' });
   });
 
   it('asks the server to text the normalized number, then signs in with the returned token', async () => {

@@ -328,5 +328,16 @@ export const zh = {
   "meeting.createdBody": "「{title}」已经可以签到了。",
   "export.doneBody": "Excel 档案已经下载到你的手机或电脑。",
   "phone.doneTitle": "电话号码已更换",
+  "login.welcome": "欢迎来到",
+  "login.intro": "用电话号码登录，就可以：",
+  "login.f1": "出示 QR 码，一扫就签到",
+  "login.f2": "全家一起签到，小孩不用手机",
+  "login.f3": "随时查看自己的签到记录",
+  "login.f4": "记录你的奉献",
+  "login.phonePlaceholder": "12-345 6789",
+  "login.codeTitle": "输入验证码",
+  "login.switchLang": "切换语言？",
+  "login.otherLang": "English",
+  "login.country": "马来西亚 +60",
 };
 export type MessageKey = keyof typeof zh;
